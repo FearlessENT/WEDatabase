@@ -8,59 +8,84 @@ CREATE TABLE Customer (
     ContactInformation VARCHAR(255)
 );
 
--- Create the Order table
+-- Create the Order table with a reference to Customer
 CREATE TABLE `Order` (
-    OrderID INT AUTO_INCREMENT PRIMARY KEY,
-    OrderDate DATE,
+    SageOrderNumber INT PRIMARY KEY,
     CustomerID INT,
-    CustomerOrderNumber VARCHAR(255),
-    DeliveryAddress VARCHAR(255),
-    SalesOrderAddress VARCHAR(255),
+    OrderDate DATE,
+    DeliveryPostcode VARCHAR(255),
+    CustomerPostcode VARCHAR(255),
     OrderTakenBy VARCHAR(255),
-    DispatchByDate DATE,
-    TotalWeight FLOAT,
-    Status VARCHAR(255),
+    EstimatedDeliveryWkC DATE,
+    Value VARCHAR(255),
+    OrderNotes TEXT,
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
+
+-- Create the PartDescription table
+CREATE TABLE PartDescription (
+    ProductCode VARCHAR(255) PRIMARY KEY,
+    ProductDescription TEXT,
+    Weight FLOAT
 );
 
 -- Create the Part table
 CREATE TABLE Part (
     PartID INT AUTO_INCREMENT PRIMARY KEY,
-    OrderID INT,
+    SageOrderNumber INT,
     ProductCode VARCHAR(255),
-    Description VARCHAR(255),
-    DepartmentAssigned VARCHAR(255),
-    UnitPrice FLOAT,
-    Weight FLOAT,
-    Status VARCHAR(255),
-    FOREIGN KEY (OrderID) REFERENCES `Order`(OrderID)
+    Dept VARCHAR(255),
+    MachineStatus VARCHAR(255),
+    PickingStatus VARCHAR(255),
+    AssemblyStatus VARCHAR(255),
+    FOREIGN KEY (SageOrderNumber) REFERENCES `Order`(SageOrderNumber),
+    FOREIGN KEY (ProductCode) REFERENCES PartDescription(ProductCode)
 );
 
 -- Create the CNC Machine table
 CREATE TABLE CNCMachine (
-    MachineID INT AUTO_INCREMENT PRIMARY KEY,
+    CNCMachineID INT AUTO_INCREMENT PRIMARY KEY,
+    MachineID VARCHAR(255),
+    Job VARCHAR(255),
+    Sheets VARCHAR(255),
+    MachineStage VARCHAR(255),
+    DateComplete DATETIME,
+    Notes TEXT,
+    TotalPieces INT,
+    INDEX (Job) -- Creating an index for the Job column
+);
+
+-- Create the OrdertoJobBridge table
+CREATE TABLE OrdertoJobBridge (
+    BridgeID INT AUTO_INCREMENT PRIMARY KEY,
+    Job VARCHAR(255),
     PartID INT,
-    Status VARCHAR(255),
-    DateComplete DATE,
+    FOREIGN KEY (Job) REFERENCES CNCMachine(Job),
     FOREIGN KEY (PartID) REFERENCES Part(PartID)
 );
 
 -- Create the Picking Process table
 CREATE TABLE PickingProcess (
     PickingID INT AUTO_INCREMENT PRIMARY KEY,
-    PartID INT,
-    Status VARCHAR(255),
-    DateComplete DATE,
-    FOREIGN KEY (PartID) REFERENCES Part(PartID)
+    Job VARCHAR(255),
+    PickingStatus VARCHAR(255),
+    DateComplete DATETIME,
+    Notes TEXT,
+    FOREIGN KEY (Job) REFERENCES OrdertoJobBridge(Job)
+);
+
+-- Create the WorkshopTypes table
+CREATE TABLE WorkshopTypes (
+    WorkshopID INT AUTO_INCREMENT PRIMARY KEY,
+    WorkshopName VARCHAR(255)
 );
 
 -- Create the Workshop table
 CREATE TABLE Workshop (
-    WorkshopID INT AUTO_INCREMENT PRIMARY KEY,
+    WorkshopID INT,
     PartID INT,
-    Type VARCHAR(255),
     AssemblyStatus VARCHAR(255),
-    DateComplete DATE,
-    Notes VARCHAR(255),
-    FOREIGN KEY (PartID) REFERENCES Part(PartID)
+    Notes TEXT,
+    FOREIGN KEY (PartID) REFERENCES Part(PartID),
+    FOREIGN KEY (WorkshopID) REFERENCES WorkshopTypes(WorkshopID)
 );
