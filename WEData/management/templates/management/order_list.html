@@ -10,9 +10,8 @@
 
 <ul>
     {% for order in orders %}
-        <li>{{ order.sage_order_number }} - {{ order.customer.name }}</li>
-    {% empty %}
-        <li>No orders found.</li>
+        <li><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a> - {{ order.customer.name }}</li>
     {% endfor %}
+
 </ul>
 {% endblock %}

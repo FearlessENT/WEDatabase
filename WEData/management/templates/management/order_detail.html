@@ -1,0 +1,19 @@
+
+{% extends 'management/base.html' %}
+
+{% block content %}
+    <h2>Order Details: {{ order.sage_order_number }}</h2>
+    <p>Customer: {{ order.customer.name }}</p>
+    <p>Order Date: {{ order.order_date }}</p>
+    <p>Delivery Postcode: {{ order.delivery_postcode }}</p>
+    <!-- Add more fields as needed -->
+
+    <h3>Parts in this Order</h3>
+    <ul>
+        {% for part in parts %}
+            <li>{{ part.product_code.product_description }} - {{ part.dept }}</li>
+        {% empty %}
+            <li>No parts found for this order.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
