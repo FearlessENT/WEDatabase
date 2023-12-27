@@ -5,6 +5,15 @@ FROM python:3.8
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+
+
+# Install system dependencies, including MySQL client
+RUN apt-get update && apt-get install -y \
+    default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+
+
 # Create and set the working directory inside the container
 WORKDIR /app
 
@@ -16,6 +25,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of your Django project into the container
 COPY manage.py .
 COPY WEData/ WEData/
+
+
+# Copy the entrypoint script and make it executable
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+
+# Set the entrypoint script to be executed
+ENTRYPOINT ["entrypoint.sh"]
+
 
 # Expose the port the app runs on
 EXPOSE 8000

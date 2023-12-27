@@ -1,0 +1,18 @@
+{% extends 'management/base.html' %}
+
+{% block content %}
+<h2>Order List</h2>
+
+<form method="get" action=".">
+    <input type="text" name="search" value="{{ search_query }}">
+    <input type="submit" value="Search">
+</form>
+
+<ul>
+    {% for order in orders %}
+        <li>{{ order.sage_order_number }} - {{ order.customer.name }}</li>
+    {% empty %}
+        <li>No orders found.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
