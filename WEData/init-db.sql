@@ -4,8 +4,7 @@ USE shop_db;
 -- Create the Customer table
 CREATE TABLE Customer (
     CustomerID INT AUTO_INCREMENT PRIMARY KEY,
-    Name VARCHAR(255),
-    ContactInformation VARCHAR(255)
+    Name VARCHAR(255)
 );
 
 -- Create the Order table with a reference to Customer
@@ -42,27 +41,35 @@ CREATE TABLE Part (
     FOREIGN KEY (ProductCode) REFERENCES PartDescription(ProductCode)
 );
 
--- Create the CNC Machine table
-CREATE TABLE CNCMachine (
-    CNCMachineID INT AUTO_INCREMENT PRIMARY KEY,
-    MachineID VARCHAR(255),
-    Job VARCHAR(255),
-    Sheets VARCHAR(255),
-    MachineStage VARCHAR(255),
-    DateComplete DATETIME,
-    Notes TEXT,
-    TotalPieces INT,
-    INDEX (Job) -- Creating an index for the Job column
-);
-
 -- Create the OrdertoJobBridge table
 CREATE TABLE OrdertoJobBridge (
     BridgeID INT AUTO_INCREMENT PRIMARY KEY,
     Job VARCHAR(255),
     PartID INT,
-    FOREIGN KEY (Job) REFERENCES CNCMachine(Job),
+    INDEX (Job),
     FOREIGN KEY (PartID) REFERENCES Part(PartID)
 );
+
+-- Create the CNCMachineDescription table
+CREATE TABLE CNCMachineDescription (
+    MachineID VARCHAR(255) PRIMARY KEY,
+    MachineName VARCHAR(255)
+);
+
+-- Create the CNCMachine table to reference CNCMachineDescription and OrdertoJobBridge
+CREATE TABLE CNCMachine (
+    CNCMachineID INT AUTO_INCREMENT PRIMARY KEY,
+    MachineID VARCHAR(255),
+    Job VARCHAR(255), -- Column to store Job values from OrdertoJobBridge
+    Sheets VARCHAR(255),
+    MachineStage VARCHAR(255),
+    DateComplete DATETIME,
+    Notes TEXT,
+    TotalPieces INT,
+    FOREIGN KEY (MachineID) REFERENCES CNCMachineDescription(MachineID),
+    FOREIGN KEY (Job) REFERENCES OrdertoJobBridge(Job) -- New foreign key referencing OrdertoJobBridge
+);
+
 
 -- Create the Picking Process table
 CREATE TABLE PickingProcess (
@@ -74,6 +81,7 @@ CREATE TABLE PickingProcess (
     FOREIGN KEY (Job) REFERENCES OrdertoJobBridge(Job)
 );
 
+
 -- Create the WorkshopTypes table
 CREATE TABLE WorkshopTypes (
     WorkshopID INT AUTO_INCREMENT PRIMARY KEY,
@@ -83,9 +91,11 @@ CREATE TABLE WorkshopTypes (
 -- Create the Workshop table
 CREATE TABLE Workshop (
     WorkshopID INT,
-    PartID INT,
+    SageOrderNumber INT,
+    ProductCode VARCHAR(255),
     AssemblyStatus VARCHAR(255),
     Notes TEXT,
-    FOREIGN KEY (PartID) REFERENCES Part(PartID),
-    FOREIGN KEY (WorkshopID) REFERENCES WorkshopTypes(WorkshopID)
-);
+    FOREIGN KEY (WorkshopID) REFERENCES WorkshopTypes(WorkshopID),
+    FOREIGN KEY (SageOrderNumber) REFERENCES `Order`(SageOrderNumber),
+    FOREIGN KEY (ProductCode) REFERENCES PartDescription(ProductCode)
+)
