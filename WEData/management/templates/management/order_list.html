@@ -3,15 +3,40 @@
 {% block content %}
 <h2>Order List</h2>
 
+<!-- Filters -->
+<div>
+    <label for="statusFilter">Order Status:</label>
+    <select id="statusFilter" onchange="filterOrders()">
+        <option value="all">All</option>
+        <option value="completed">Completed</option>
+        <option value="notCompleted">Not Completed</option>
+    </select>
+</div>
+
+<!-- Search -->
 <form method="get" action=".">
     <input type="text" name="search" value="{{ search_query }}">
     <input type="submit" value="Search">
 </form>
 
-<ul>
-    {% for order in orders %}
-        <li><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a> - {{ order.customer.name }}</li>
-    {% endfor %}
+<!-- Order Table -->
+<table>
+    <thead>
+        <tr>
+            <th>Order Number</th>
+            <th>Customer Name</th>
+            <th>Order Date</th>
+            <th>Status</th>
+            <!-- Add more headers as needed -->
+        </tr>
+    </thead>
+    <tbody id="orderTableBody">
+        <!-- Table rows will be populated by JavaScript -->
+    </tbody>
+</table>
 
-</ul>
+
+{% extends 'management/base.html' %}
+
+<script src="{% static 'management/js/orderList.js' %}"></script>
 {% endblock %}

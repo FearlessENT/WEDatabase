@@ -24,7 +24,7 @@ wait_for_db
 echo "Applying database migrations..."
 python manage.py makemigrations
 python manage.py migrate
-
+python manage.py collectstatic
 
 
 
