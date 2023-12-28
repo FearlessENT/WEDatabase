@@ -8,7 +8,11 @@ from django.db.models import Q
 
 from django.core.paginator import Paginator
 from .models import Order
-
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from .models import Order
 
 
 
@@ -18,31 +22,31 @@ def order_list(request):
     product_query = request.GET.get('product_search', '')
     job_query = request.GET.get('job_search', '')
 
+    # Fetch orders based on the search criteria
     orders = Order.objects.all()
-
     if customer_query:
         orders = orders.filter(customer__name__icontains=customer_query)
-        # Add more customer-related filters here
-
     if order_query:
         orders = orders.filter(sage_order_number__icontains=order_query)
-
     if product_query:
         orders = orders.filter(part__product_code__icontains=product_query)
-
     if job_query:
         orders = orders.filter(job__icontains=job_query)
 
-
-
-    # Convert num_orders to an integer
-    num_orders = int(request.GET.get('num_orders', 10))  # Default to 10
-
-    # Paginator setup
+    # Pagination setup
+    num_orders = int(request.GET.get('num_orders', 10))  # Default to 10 orders per page
     paginator = Paginator(orders, num_orders)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
 
+    # Handle AJAX request for 'Show More' functionality
+    if request.is_ajax():
+        html = render_to_string('management/_orders_list.html', {
+            'page_obj': page_obj,
+        }, request=request)
+        return HttpResponse(html)
+
+    # Render the full page for the initial load or non-AJAX requests
     return render(request, 'management/order_list.html', {
         'page_obj': page_obj,
         'customer_query': customer_query,
@@ -51,8 +55,6 @@ def order_list(request):
         'job_query': job_query,
         'num_orders': num_orders
     })
-
-
 
 
 

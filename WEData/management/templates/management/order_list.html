@@ -71,13 +71,31 @@
 
 
 
-
-
 {% if page_obj.has_next %}
     <button id="show-more" data-next-page="{{ page_obj.next_page_number }}">Show More</button>
 {% endif %}
 
+<script>
+    $('#show-more').click(function() {
+        var nextPage = $(this).data('next-page');
+        $.ajax({
+            url: '?page=' + nextPage + '&num_orders={{ num_orders }}',
+            type: 'get',
+            success: function(data) {
+                // Append the new orders
+                $('#orders-container').append($(data).find('tr'));
 
+                // Check if there is a next page
+                var newPage = parseInt(nextPage) + 1;
+                if ($(data).find('#show-more').length) {
+                    $('#show-more').data('next-page', newPage);
+                } else {
+                    $('#show-more').hide();
+                }
+            }
+        });
+    });
+</script>
 
 
 

@@ -1,4 +1,10 @@
-
+<!-- _orders_list.html -->
 {% for order in page_obj %}
-    <!-- Render each order -->
+    <tr>
+        <td><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a></td>
+        <td><a href="{% url 'customer_orders' order.customer.customer_id %}">{{ order.customer.name }}</a></td>
+        <td>{{ order.order_date }}</td>
+        <td>{{ order.status }}</td>
+        <!-- Add more data cells as needed -->
+    </tr>
 {% endfor %}
