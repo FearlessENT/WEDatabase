@@ -1,0 +1,39 @@
+{% extends 'management/base.html' %}
+
+{% block content %}
+<h2>Orders for {{ customer.name }}</h2>
+<table>
+    <thead>
+        <tr>
+            <th><a href="?sort={% if current_sort_field == 'sage_order_number' and current_sort_direction == '-' %}{% else %}-{% endif %}sage_order_number">Order Number</a></th>
+            <th><a href="?sort={% if current_sort_field == 'order_date' and current_sort_direction == '-' %}{% else %}-{% endif %}order_date">Date Placed</a></th>
+            <th>Product Name</th> <!-- Not sortable -->
+            <th><a href="?sort={% if current_sort_field == 'delivery_postcode' and current_sort_direction == '-' %}{% else %}-{% endif %}delivery_postcode">Delivery Postcode</a></th>
+            <th><a href="?sort={% if current_sort_field == 'order_notes' and current_sort_direction == '-' %}{% else %}-{% endif %}order_notes">Order Notes</a></th>
+            <th><a href="?sort={% if current_sort_field == 'estimated_delivery_wkc' and current_sort_direction == '-' %}{% else %}-{% endif %}estimated_delivery_wkc">Estimated Delivery</a></th>
+        </tr>
+    </thead>
+    
+    
+    
+    
+    
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <td><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a></td>
+            <td>{{ order.order_date }}</td>
+            <td>
+                {% for part in order.part_set.all %}
+                    {{ part.product_code.product_description }}<br>
+                {% endfor %}
+            </td>
+            <td>{{ order.delivery_postcode }}</td>
+            <td>{{ order.order_notes }}</td>
+            <td>{{ order.estimated_delivery_wkc }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    
+</table>
+{% endblock %}

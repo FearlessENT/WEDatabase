@@ -35,3 +35,63 @@ body {
 .container {
     padding: 15px;
 }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f4f4f4;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+
+
+
+
+
+
+
+
+.pagination {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.pagination .step-links {
+    display: inline-block;
+}
+
+.pagination .step-links a {
+    padding: 5px 10px;
+    margin: 0 5px;
+    border: 1px solid #ddd;
+    color: #428bca;
+    text-decoration: none;
+}
+
+.pagination .step-links a:hover {
+    border-color: #428bca;
+}
+
+.pagination .step-links .current {
+    padding: 5px 10px;
+    margin: 0 5px;
+    border: 1px solid #428bca;
+    color: #fff;
+    background-color: #428bca;
+}

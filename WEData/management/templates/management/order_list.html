@@ -13,11 +13,34 @@
     </select>
 </div>
 
-<!-- Search -->
+
+
 <form method="get" action=".">
-    <input type="text" name="search" value="{{ search_query }}">
+    <select name="num_orders" onchange="this.form.submit()">
+        <option value="10" {% if num_orders == '10' %}selected{% endif %}>10</option>
+        <option value="20" {% if num_orders == '20' %}selected{% endif %}>20</option>
+        <option value="30" {% if num_orders == '30' %}selected{% endif %}>30</option>
+        <!-- Add more options as needed -->
+    </select>
+</form>
+
+
+
+
+<!-- Search Form -->
+<form method="get" action=".">
+    <!-- Customer Info Search -->
+    <input type="text" name="customer_search" placeholder="Customer Name" value="{{ customer_query }}">
+    <!-- Additional customer fields can be added here -->
+
+    <!-- Order Details Search -->
+    <input type="text" name="order_search" placeholder="Order Number" value="{{ order_query }}">
+    <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}">
+    <input type="text" name="job_search" placeholder="Job" value="{{ job_query }}">
+
     <input type="submit" value="Search">
 </form>
+
 
 <!-- Order Table -->
 <table>
@@ -30,13 +53,34 @@
             <!-- Add more headers as needed -->
         </tr>
     </thead>
-    <tbody id="orderTableBody">
-        <!-- Table rows will be populated by JavaScript -->
+    <tbody>
+        {% for order in page_obj %}
+        <tr>
+            <td><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a></td>
+            <td><a href="{% url 'customer_orders' order.customer.customer_id %}">{{ order.customer.name }}</a></td>
+            <td>{{ order.order_date }}</td>
+            <td>{{ order.status }}</td>
+            <!-- Add more data cells as needed -->
+        </tr>
+        {% endfor %}
+
+        
+
     </tbody>
 </table>
 
 
-{% extends 'management/base.html' %}
 
-<script src="{% static 'management/js/orderList.js' %}"></script>
+
+
+{% if page_obj.has_next %}
+    <button id="show-more" data-next-page="{{ page_obj.next_page_number }}">Show More</button>
+{% endif %}
+
+
+
+
+
+
+
 {% endblock %}

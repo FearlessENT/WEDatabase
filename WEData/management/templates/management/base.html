@@ -6,10 +6,11 @@
     <meta charset="UTF-8">
     <title>{% block title %}My Management App{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'management/css/styles.css' %}">
+    <script src="{% static 'management/js/javascript.js' %}"></script>
 </head>
 <body>
     <div class="header">
-        <h1>Management App</h1>
+        <h1>Order Detail</h1>
     </div>
     <div class="nav">
         <a href="{% url 'order_list' %}">Orders</a>
