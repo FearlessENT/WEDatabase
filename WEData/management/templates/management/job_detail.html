@@ -1,0 +1,36 @@
+{% extends 'management/base.html' %}
+
+{% block content %}
+    <h2>Job Details: {{ job_id }}</h2>
+
+    <h3>Order to Job Bridge</h3>
+    {% for job_bridge in job_bridges %}
+        <p>Part ID: {{ job_bridge.part_id }}</p>
+        <!-- Display other fields from job_bridge -->
+    {% endfor %}
+
+    <h3>Picking Process</h3>
+    {% for picking in picking_infos %}
+        <p>Status: {{ picking.picking_status }}</p>
+        <p>Date Complete: {{ picking.date_complete }}</p>
+        <p>Notes: {{ picking.notes }}</p>
+    {% endfor %}
+
+    <h3>CNC Machine Information</h3>
+    {% for cnc in cnc_infos %}
+        <p>Machine ID: {{ cnc.machine_id }}</p>
+        <p>Sheets: {{ cnc.sheets }}</p>
+        <p>Machine Stage: {{ cnc.machine_stage }}</p>
+        <p>Date Complete: {{ cnc.date_complete }}</p>
+        <p>Notes: {{ cnc.notes }}</p>
+        <p>Total Pieces: {{ cnc.total_pieces }}</p>
+    {% endfor %}
+
+    <h3>Workshop Information</h3>
+    {% for workshop in workshop_infos %}
+        <p>Workshop ID: {{ workshop.workshop_id }}</p>
+        <p>Assembly Status: {{ workshop.assembly_status }}</p>
+        <p>Notes: {{ workshop.notes }}</p>
+    {% endfor %}
+
+{% endblock %}

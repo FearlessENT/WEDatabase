@@ -1,4 +1,5 @@
 {% extends 'management/base.html' %}
+{% load custom_filters %}
 
 {% block content %}
 <h2>Order List</h2>
@@ -15,20 +16,9 @@
 
 
 
-<form method="get" action=".">
-    <select name="num_orders" onchange="this.form.submit()">
-        <option value="10" {% if num_orders == '10' %}selected{% endif %}>10</option>
-        <option value="20" {% if num_orders == '20' %}selected{% endif %}>20</option>
-        <option value="30" {% if num_orders == '30' %}selected{% endif %}>30</option>
-        <!-- Add more options as needed -->
-    </select>
-</form>
-
-
-
 
 <!-- Search Form -->
-<form method="get" action=".">
+<form method="get" action="." class = "search-form">
     <!-- Customer Info Search -->
     <input type="text" name="customer_search" placeholder="Customer Name" value="{{ customer_query }}">
     <!-- Additional customer fields can be added here -->
@@ -40,6 +30,40 @@
 
     <input type="submit" value="Search">
 </form>
+
+
+
+
+
+
+
+<!-- Number of Orders Selection -->
+<div class = "num-orders-form">
+    <label for="num-orders-buttons">Orders per page:</label>
+    {% for i in num_range %}
+        <form method="get" action=".">
+            <!-- Include existing search parameters as hidden fields -->
+            <input type="hidden" name="customer_search" value="{{ customer_query }}">
+            <input type="hidden" name="order_search" value="{{ order_query }}">
+            <!-- Include other search fields as hidden inputs -->
+
+            <!-- Set number of orders -->
+            <input type="hidden" name="num_orders" value="{{ i|multiply:20 }}">
+            <button type="submit">{{ i|multiply:20 }}</button>
+        </form>
+    {% endfor %}
+</div>
+
+
+
+
+
+
+
+
+
+
+
 
 
 <!-- Order Table -->
@@ -69,36 +93,45 @@
     </tbody>
 </table>
 
-
-
+<!-- Show More Button -->
 {% if page_obj.has_next %}
-    <button id="show-more" data-next-page="{{ page_obj.next_page_number }}">Show More</button>
+    <form method="get" action=".">
+        <!-- Include existing search parameters as hidden fields -->
+        <input type="hidden" name="customer_search" value="{{ customer_query }}">
+        <input type="hidden" name="order_search" value="{{ order_query }}">
+        <!-- Include other search fields as hidden inputs -->
+
+        <!-- Current number of orders to show -->
+        <input type="hidden" name="num_orders" value="{{ num_orders }}">
+        <input type="hidden" name="show_more" value="true">
+        <button type="submit" id="show-more">Show More</button>
+    </form>
 {% endif %}
 
-<script>
-    $('#show-more').click(function() {
-        var nextPage = $(this).data('next-page');
-        $.ajax({
-            url: '?page=' + nextPage + '&num_orders={{ num_orders }}',
-            type: 'get',
-            success: function(data) {
-                // Append the new orders
-                $('#orders-container').append($(data).find('tr'));
 
-                // Check if there is a next page
-                var newPage = parseInt(nextPage) + 1;
-                if ($(data).find('#show-more').length) {
-                    $('#show-more').data('next-page', newPage);
-                } else {
-                    $('#show-more').hide();
-                }
-            }
-        });
+
+
+
+<script>
+    // Script to store the scroll position
+    document.getElementById('show-more').addEventListener('click', function() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    });
+
+    // Script to restore the scroll position
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('scrollPosition') !== null) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition'); // Clear the stored position
+        }
     });
 </script>
 
 
 
-
-
 {% endblock %}
+
+
+
+
+

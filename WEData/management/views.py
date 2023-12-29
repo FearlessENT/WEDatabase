@@ -13,7 +13,7 @@ from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from .models import Order
-
+from django.http import HttpResponse
 
 
 def order_list(request):
@@ -33,31 +33,29 @@ def order_list(request):
     if job_query:
         orders = orders.filter(job__icontains=job_query)
 
-    # Pagination setup
+       # Pagination setup
     num_orders = int(request.GET.get('num_orders', 10))  # Default to 10 orders per page
+    show_more = request.GET.get('show_more', False)
+    if show_more:
+        num_orders += 20  # Increase by x each time 'Show More' is clicked
+
+    # Paginator setup
     paginator = Paginator(orders, num_orders)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
+    page_obj = paginator.get_page(1)  # Always show the first 'page'
 
-    # Handle AJAX request for 'Show More' functionality
-    if request.is_ajax():
-        html = render_to_string('management/_orders_list.html', {
-            'page_obj': page_obj,
-        }, request=request)
-        return HttpResponse(html)
+    # Create a range for the template
+    num_range = range(1, 6)  # Adjust the range as needed
 
-    # Render the full page for the initial load or non-AJAX requests
+    # Render the full page for non-AJAX requests
     return render(request, 'management/order_list.html', {
         'page_obj': page_obj,
         'customer_query': customer_query,
         'order_query': order_query,
         'product_query': product_query,
         'job_query': job_query,
-        'num_orders': num_orders
+        'num_orders': num_orders,
+        'num_range': num_range
     })
-
-
-
 
 
 
@@ -97,18 +95,28 @@ def customer_orders(request, customer_id):
 
 
 
-
-
-
-
-
-
-
+from django.shortcuts import get_object_or_404
+from .models import Order, Part, OrdertoJobBridge
 
 def order_detail(request, sage_order_number):
-    order = Order.objects.get(sage_order_number=sage_order_number)
-    # Fetch additional related data as needed
-    return render(request, 'management/order_detail.html', {'order': order})
+    order = get_object_or_404(Order, sage_order_number=sage_order_number)
+    parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code')
+
+    # Fetch related job information for each part
+    parts_with_jobs = [
+        {
+            'part': part,
+            'job': OrdertoJobBridge.objects.filter(part_id=part.part_id).first(),  # Adjust field name as per your model
+        }
+        for part in parts
+    ]
+
+    return render(request, 'management/order_detail.html', {
+        'order': order,
+        'parts_with_jobs': parts_with_jobs
+    })
+
+
 
 
 from django.http import JsonResponse
@@ -136,3 +144,23 @@ def api_orders(request):
     ]
 
     return JsonResponse(orders, safe=False)
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import OrdertoJobBridge, PickingProcess, CNCMachine, Workshop
+
+def job_detail(request, job_id):
+    job_bridges = OrdertoJobBridge.objects.filter(job=job_id)
+    picking_infos = PickingProcess.objects.filter(job=job_id)
+    cnc_infos = CNCMachine.objects.filter(job=job_id)
+    workshop_infos = Workshop.objects.filter(job=job_id)
+
+    return render(request, 'management/job_detail.html', {
+        'job_bridges': job_bridges,
+        'picking_infos': picking_infos,
+        'cnc_infos': cnc_infos,
+        'workshop_infos': workshop_infos
+    })

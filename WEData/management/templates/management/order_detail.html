@@ -1,19 +1,72 @@
-
 {% extends 'management/base.html' %}
 
 {% block content %}
-    <h2>Order Details: {{ order.sage_order_number }}</h2>
-    <p>Customer: {{ order.customer.name }}</p>
-    <p>Order Date: {{ order.order_date }}</p>
-    <p>Delivery Postcode: {{ order.delivery_postcode }}</p>
-    <!-- Add more fields as needed -->
+    <h2>Order Number: {{ order.sage_order_number }}</h2>
+
+
+
+    <div class="order-details-container">
+        <table class="order-details-table">
+            <tr>
+                <th>Customer</th>
+                <td>{{ order.customer.name }}</td>
+            </tr>
+            <tr>
+                <th>Order Date</th>
+                <td>{{ order.order_date }}</td>
+            </tr>
+            <tr>
+                <th>Delivery Postcode</th>
+                <td>{{ order.delivery_postcode }}</td>
+            </tr>
+            <!-- Add more rows as needed -->
+        </table>
+        <!-- Add more fields as needed -->
+    </div>
+
+
+    
+
+
+
+
+
+
+
 
     <h3>Parts in this Order</h3>
-    <ul>
-        {% for part in parts %}
-            <li>{{ part.product_code.product_description }} - {{ part.dept }}</li>
-        {% empty %}
-            <li>No parts found for this order.</li>
-        {% endfor %}
-    </ul>
+    <table>
+        <thead>
+            <tr>
+                <th>Product Code</th>
+                <th>Job</th>
+                <th>Department</th>
+                <th>Machining Status</th>
+                <th>Picking Status</th>
+                <th>Assembly Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in parts_with_jobs %}
+                <tr>
+                    <td>{{ item.part.product_code }}</td>
+                    <td>
+                        {% if item.job %}
+                        <a href="{% url 'job_detail' job_id=item.job.job %}">{{ item.job.job }}</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ item.part.dept }}</td>
+                    <td>{{ item.part.machine_status }}</td>
+                    <td>{{ item.part.picking_status }}</td>
+                    <td>{{ item.part.assembly_status }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">No parts found for this order.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}
