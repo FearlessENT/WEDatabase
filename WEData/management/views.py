@@ -153,13 +153,16 @@ from django.shortcuts import render, get_object_or_404
 from .models import OrdertoJobBridge, PickingProcess, CNCMachine, Workshop
 
 def job_detail(request, job_id):
-    job_bridges = OrdertoJobBridge.objects.filter(job=job_id)
-    picking_infos = PickingProcess.objects.filter(job=job_id)
-    cnc_infos = CNCMachine.objects.filter(job=job_id)
-    workshop_infos = Workshop.objects.filter(job=job_id)
+    # Retrieve the bridge_id(s) for the given job_id
+    bridge_ids = OrdertoJobBridge.objects.filter(job=job_id).values_list('bridge_id', flat=True)
+
+    # Filter the related models using the retrieved bridge_ids
+    picking_infos = PickingProcess.objects.filter(bridge_id__in=bridge_ids)
+    cnc_infos = CNCMachine.objects.filter(bridge_id__in=bridge_ids)
+    workshop_infos = Workshop.objects.filter(bridge_id__in=bridge_ids)
 
     return render(request, 'management/job_detail.html', {
-        'job_bridges': job_bridges,
+        'job_id': job_id,
         'picking_infos': picking_infos,
         'cnc_infos': cnc_infos,
         'workshop_infos': workshop_infos
