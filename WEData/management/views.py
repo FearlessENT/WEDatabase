@@ -42,7 +42,7 @@ def order_list(request):
         orders = orders.exclude(status='Complete')  # Adjust field and value as per your model
 
     # Pagination setup
-    num_orders = int(request.GET.get('num_orders', 10))  # Default to 10 orders per page
+    num_orders = int(request.GET.get('num_orders', 20))  # Default to 10 orders per page
     show_more = request.GET.get('show_more', False)
     if show_more:
         num_orders += 20

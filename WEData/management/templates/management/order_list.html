@@ -12,6 +12,12 @@
             <option value="incomplete" {% if status_filter == 'incomplete' %}selected{% endif %}>Incomplete</option>
             <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
         </select>
+        <input type="hidden" name="customer_search" value="{{ customer_query }}">
+        <input type="hidden" name="order_search" value="{{ order_query }}">
+        <input type="hidden" name="product_search" value="{{ product_query }}">
+        <input type="hidden" name="job_search" value="{{ job_query }}">
+        <input type="hidden" name="num_orders" value="{{ num_orders }}">
+    
         <noscript><input type="submit" value="Filter"></noscript> <!-- Fallback for no JavaScript -->
     </form>
     
