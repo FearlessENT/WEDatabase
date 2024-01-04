@@ -28,6 +28,7 @@ class Order(models.Model):
     estimated_delivery_wkc = models.DateField(db_column='EstimatedDeliveryWkC')
     value = models.CharField(max_length=255, db_column='Value')
     order_notes = models.TextField(db_column='OrderNotes')
+    status = models.CharField(max_length=50, default='Pending', db_index = True)
 
     class Meta:
         db_table = 'order'

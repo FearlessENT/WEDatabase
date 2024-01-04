@@ -27,3 +27,18 @@ function sortTable(columnIndex) {
         }
     }
 }
+
+
+
+// Calculate 'Days Old' for each order
+document.addEventListener("DOMContentLoaded", function() {
+    const orders = document.querySelectorAll('[id^="days-old-"]');
+    orders.forEach(function(order) {
+        const orderDateStr = order.previousElementSibling.previousElementSibling.textContent.trim();
+        const orderDate = new Date(orderDateStr);
+        const currentDate = new Date();
+        const timeDiff = currentDate - orderDate;
+        const daysOld = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        order.textContent = daysOld;
+    });
+});

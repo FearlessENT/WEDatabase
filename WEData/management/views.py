@@ -17,10 +17,12 @@ from django.http import HttpResponse
 
 
 def order_list(request):
+    # Existing search queries
     customer_query = request.GET.get('customer_search', '')
     order_query = request.GET.get('order_search', '')
     product_query = request.GET.get('product_search', '')
     job_query = request.GET.get('job_search', '')
+    status_filter = request.GET.get('status_filter', 'all')  # New status filter
 
     # Fetch orders based on the search criteria
     orders = Order.objects.all()
@@ -33,20 +35,24 @@ def order_list(request):
     if job_query:
         orders = orders.filter(job__icontains=job_query)
 
-       # Pagination setup
+    # Apply status filter
+    if status_filter == 'complete':
+        orders = orders.filter(status='Complete')  # Adjust field and value as per your model
+    elif status_filter == 'incomplete':
+        orders = orders.exclude(status='Complete')  # Adjust field and value as per your model
+
+    # Pagination setup
     num_orders = int(request.GET.get('num_orders', 10))  # Default to 10 orders per page
     show_more = request.GET.get('show_more', False)
     if show_more:
-        num_orders += 20  # Increase by x each time 'Show More' is clicked
+        num_orders += 20
 
-    # Paginator setup
     paginator = Paginator(orders, num_orders)
-    page_obj = paginator.get_page(1)  # Always show the first 'page'
+    page_obj = paginator.get_page(1)
 
     # Create a range for the template
-    num_range = range(1, 6)  # Adjust the range as needed
+    num_range = range(1, 6)
 
-    # Render the full page for non-AJAX requests
     return render(request, 'management/order_list.html', {
         'page_obj': page_obj,
         'customer_query': customer_query,
@@ -54,9 +60,9 @@ def order_list(request):
         'product_query': product_query,
         'job_query': job_query,
         'num_orders': num_orders,
-        'num_range': num_range
+        'num_range': num_range,
+        'status_filter': status_filter  # Pass the status filter to the template
     })
-
 
 
 

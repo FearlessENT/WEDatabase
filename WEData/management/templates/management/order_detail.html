@@ -35,7 +35,7 @@
 
 
     <h3>Parts in this Order</h3>
-    <table>
+    <table class = "order-details-table">
         <thead>
             <tr>
                 <th>Product Code</th>
@@ -58,9 +58,12 @@
                         {% endif %}
                     </td>
                     <td>{{ item.part.dept }}</td>
-                    <td>{{ item.part.machine_status }}</td>
+                    <!-- <td>{{ item.part.machine_status }}</td>
                     <td>{{ item.part.picking_status }}</td>
-                    <td>{{ item.part.assembly_status }}</td>
+                    <td>{{ item.part.assembly_status }}</td> -->
+                    <td class="{% if item.part.machine_status == 'Machined' %}status-green{% elif item.part.machine_status == 'In Progress' or item.part.machine_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ item.part.machine_status }}</td>
+                    <td class="{% if item.part.picking_status == 'Picked'%}status-green{% elif item.part.picking_status == 'In Progress' or item.part.picking_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ item.part.picking_status }}</td>
+                    <td class="{% if item.part.assembly_status == 'Built' or item.part.assembly_status == 'Goods Ready' %}status-green{% elif item.part.assembly_status == 'In Progress' or item.part.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ item.part.assembly_status }}</td>
                 </tr>
             {% empty %}
                 <tr>

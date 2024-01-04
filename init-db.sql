@@ -18,6 +18,7 @@ CREATE TABLE `Order` (
     EstimatedDeliveryWkC DATE,
     Value VARCHAR(255),
     OrderNotes TEXT,
+    Status VARCHAR(50) DEFAULT 'Pending',
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
 );
 
