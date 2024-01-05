@@ -262,39 +262,35 @@ table a:hover {
 
 /* Container for notes and button */
 .notes-container {
-    display: flex;
-    align-items: center;
+    display: flex; /* Use flexbox to align items horizontally */
+    align-items: center; /* Align items vertically in the center */
+    width: 100%; /* Full width of the container */
+}
+
+.notes-container form {
+    display: flex; /* Use flexbox within the form as well */
+    width: 100%; /* Full width of the container */
 }
 
 /* Style for the textarea */
 textarea.autoresize {
-    width: calc(100% - 100px); /* Adjust width as needed */
-    min-height: 10px; /* Minimum height */
-    overflow-y: hidden; /* Hide vertical scrollbar */
+    flex-grow: 1; /* Allow textarea to grow and fill available space */
+    margin-right: 10px; /* Space between textarea and button */
+    min-height: 38px; /* Minimum height to align with button */
     resize: none; /* Disable manual resize */
 }
 
 /* Style for the save button */
 .save-btn {
-    margin-left: 2px; /* Space between textarea and button */
-    align-self: flex-start; /* Align the button vertically to the top */
-
-}
-
-
-
-
-input[type="submit"] {
-    background-color: #4CAF50; /* Green background */
-    color: white; /* White text */
-    padding: 8px 20px; /* Reduce the top and bottom padding */
-    margin: 8px 0; /* Margin */
-    border: none; /* No border */
-    border-radius: 4px; /* Rounded borders */
+    white-space: nowrap; /* Prevent text wrapping in the button */
+    padding: 8px 15px; /* Padding inside the button */
+    border: 1px solid #ccc; /* Border for the button */
+    background-color: #4CAF50; /* Background color */
+    color: white; /* Text color */
+    border-radius: 4px; /* Rounded corners */
     cursor: pointer; /* Pointer cursor on hover */
-    font-size: 16px; /* Font size */
 }
 
-input[type="submit"]:hover {
-    background-color: #45a049; /* Darker shade of green on hover */
+.save-btn:hover {
+    background-color: #45a049; /* Darker shade on hover */
 }
