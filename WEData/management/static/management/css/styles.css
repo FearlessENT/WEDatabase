@@ -254,3 +254,47 @@ table a:hover {
 .filter-form input[type="submit"]:hover {
     background-color: #0056b3;
 }
+
+
+
+
+
+
+/* Container for notes and button */
+.notes-container {
+    display: flex;
+    align-items: center;
+}
+
+/* Style for the textarea */
+textarea.autoresize {
+    width: calc(100% - 100px); /* Adjust width as needed */
+    min-height: 10px; /* Minimum height */
+    overflow-y: hidden; /* Hide vertical scrollbar */
+    resize: none; /* Disable manual resize */
+}
+
+/* Style for the save button */
+.save-btn {
+    margin-left: 2px; /* Space between textarea and button */
+    align-self: flex-start; /* Align the button vertically to the top */
+
+}
+
+
+
+
+input[type="submit"] {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    padding: 8px 20px; /* Reduce the top and bottom padding */
+    margin: 8px 0; /* Margin */
+    border: none; /* No border */
+    border-radius: 4px; /* Rounded borders */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+}
+
+input[type="submit"]:hover {
+    background-color: #45a049; /* Darker shade of green on hover */
+}

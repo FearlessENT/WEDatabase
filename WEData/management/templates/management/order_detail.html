@@ -1,4 +1,6 @@
 {% extends 'management/base.html' %}
+{% load humanize %}
+
 
 {% block content %}
     <h2>Order Number: {{ order.sage_order_number }}</h2>
@@ -18,6 +20,10 @@
             <tr>
                 <th>Delivery Postcode</th>
                 <td>{{ order.delivery_postcode }}</td>
+            </tr>
+            <tr>
+                <th>Order Value:</th>
+                <td>£ {{ order.value|intcomma }}</td>
             </tr>
             <!-- Add more rows as needed -->
         </table>

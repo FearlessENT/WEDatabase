@@ -29,6 +29,7 @@ class Order(models.Model):
     value = models.CharField(max_length=255, db_column='Value')
     order_notes = models.TextField(db_column='OrderNotes')
     status = models.CharField(max_length=50, default='Pending', db_index = True)
+    user_notes = models.TextField(db_column='UserNotes', blank=True, null=True)
 
     class Meta:
         db_table = 'order'

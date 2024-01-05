@@ -190,10 +190,19 @@ def order_detail(request, sage_order_number):
         for part in parts
     ]
 
+    cleaned_order_value = clean_value(order.value)
+
     return render(request, 'management/order_detail.html', {
         'order': order,
         'parts_with_jobs': parts_with_jobs
     })
+
+
+
+
+
+
+
 
 
 
@@ -228,21 +237,64 @@ def api_orders(request):
 
 
 
-from django.shortcuts import render, get_object_or_404
-from .models import OrdertoJobBridge, PickingProcess, CNCMachine, Workshop
+
+
+
+
+
+
+
+from django.shortcuts import render
+from .models import OrdertoJobBridge, PickingProcess, CNCMachine, Workshop, Part, Order
 
 def job_detail(request, job_id):
-    # Retrieve the bridge_id(s) for the given job_id
-    bridge_ids = OrdertoJobBridge.objects.filter(job=job_id).values_list('bridge_id', flat=True)
+    # Fetch parts linked to the job
+    parts = Part.objects.filter(ordertojobbridge__job=job_id)
 
-    # Filter the related models using the retrieved bridge_ids
-    picking_infos = PickingProcess.objects.filter(bridge_id__in=bridge_ids)
-    cnc_infos = CNCMachine.objects.filter(bridge_id__in=bridge_ids)
-    workshop_infos = Workshop.objects.filter(bridge_id__in=bridge_ids)
+    # Fetch orders linked to those parts
+    orders = Order.objects.filter(part__ordertojobbridge__job=job_id).distinct()
+
+    # Fetch picking and CNC info linked to the job using the job number string
+    picking_infos = PickingProcess.objects.filter(job__job=job_id)
+    cnc_infos = CNCMachine.objects.filter(job__job=job_id)
+
+    # Fetch parts status for picking and CNC processes
+    picking_parts_status = {part.part_id: part.picking_status for part in parts}
+    cnc_parts_status = {part.part_id: part.machine_status for part in parts}
+
+    # Fetch workshop info linked to the job
+    workshop_infos = Workshop.objects.filter(sage_order_number__part__ordertojobbridge__job=job_id)
 
     return render(request, 'management/job_detail.html', {
         'job_id': job_id,
+        'parts': parts,
+        'orders': orders,
         'picking_infos': picking_infos,
         'cnc_infos': cnc_infos,
-        'workshop_infos': workshop_infos
+        'workshop_infos': workshop_infos,
+        'picking_parts_status': picking_parts_status,
+        'cnc_parts_status': cnc_parts_status
     })
+
+
+
+
+
+
+
+
+
+
+from django.shortcuts import redirect
+
+
+def update_order_notes(request):
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        user_notes = request.POST.get('user_notes')
+
+        order = Order.objects.get(sage_order_number=order_id)
+        order.user_notes = user_notes
+        order.save()
+
+        return redirect('order_list')  # Redirect back to the order list page

@@ -2,54 +2,55 @@
 {% load custom_filters %}
 
 {% block content %}
-<h2>Order List</h2>
 
-<!-- Filters -->
-<div class="filter-form">
-    <form method="get" action="">
-        <select name="status_filter" onchange="this.form.submit()">
-            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
-            <option value="incomplete" {% if status_filter == 'incomplete' %}selected{% endif %}>Incomplete</option>
-            <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
-        </select>
-        <input type="hidden" name="customer_search" value="{{ customer_query }}">
-        <input type="hidden" name="order_search" value="{{ order_query }}">
-        <input type="hidden" name="product_search" value="{{ product_query }}">
-        <input type="hidden" name="job_search" value="{{ job_query }}">
-        <input type="hidden" name="num_orders" value="{{ num_orders }}">
-    
-        <noscript><input type="submit" value="Filter"></noscript> <!-- Fallback for no JavaScript -->
+    <h2>Order List</h2>
+
+    <!-- Filters -->
+    <div class="filter-form">
+        <form method="get" action="">
+            <select name="status_filter" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                <option value="incomplete" {% if status_filter == 'incomplete' %}selected{% endif %}>Incomplete</option>
+                <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+            </select>
+            <input type="hidden" name="customer_search" value="{{ customer_query }}">
+            <input type="hidden" name="order_search" value="{{ order_query }}">
+            <input type="hidden" name="product_search" value="{{ product_query }}">
+            <input type="hidden" name="job_search" value="{{ job_query }}">
+            <input type="hidden" name="num_orders" value="{{ num_orders }}">
+        
+            <noscript><input type="submit" value="Filter"></noscript> <!-- Fallback for no JavaScript -->
+        </form>
+        
+        
+        
+
+
+    <!--     
+        <label for="statusFilter">Order Status:</label>
+        <select id="statusFilter" onchange="filterOrders()">
+            <option value="all">All</option>
+            <option value="completed">Completed</option>
+            <option value="notCompleted">Not Completed</option>
+        </select> -->
+    </div>
+
+
+
+
+    <!-- Search Form -->
+    <form method="get" action="." class = "search-form">
+        <!-- Customer Info Search -->
+        <input type="text" name="customer_search" placeholder="Customer Name" value="{{ customer_query }}">
+        <!-- Additional customer fields can be added here -->
+
+        <!-- Order Details Search -->
+        <input type="text" name="order_search" placeholder="Order Number" value="{{ order_query }}">
+        <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}">
+        <input type="text" name="job_search" placeholder="Job" value="{{ job_query }}">
+
+        <input type="submit" value="Search">
     </form>
-    
-    
-    
-
-
-<!--     
-    <label for="statusFilter">Order Status:</label>
-    <select id="statusFilter" onchange="filterOrders()">
-        <option value="all">All</option>
-        <option value="completed">Completed</option>
-        <option value="notCompleted">Not Completed</option>
-    </select> -->
-</div>
-
-
-
-
-<!-- Search Form -->
-<form method="get" action="." class = "search-form">
-    <!-- Customer Info Search -->
-    <input type="text" name="customer_search" placeholder="Customer Name" value="{{ customer_query }}">
-    <!-- Additional customer fields can be added here -->
-
-    <!-- Order Details Search -->
-    <input type="text" name="order_search" placeholder="Order Number" value="{{ order_query }}">
-    <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}">
-    <input type="text" name="job_search" placeholder="Job" value="{{ job_query }}">
-
-    <input type="submit" value="Search">
-</form>
 
 
 
@@ -57,103 +58,123 @@
 
 
 
-<!-- Number of Orders Selection -->
-<div class = "num-orders-form">
-    <label for="num-orders-buttons">Orders per page:</label>
-    {% for i in num_range %}
+    <!-- Number of Orders Selection -->
+    <div class = "num-orders-form">
+        <label for="num-orders-buttons">Orders per page:</label>
+        {% for i in num_range %}
+            <form method="get" action=".">
+                <!-- Include existing search parameters as hidden fields -->
+                <input type="hidden" name="customer_search" value="{{ customer_query }}">
+                <input type="hidden" name="order_search" value="{{ order_query }}">
+                <!-- Include other search fields as hidden inputs -->
+
+                <!-- Set number of orders -->
+                <input type="hidden" name="num_orders" value="{{ i|multiply:20 }}">
+                <button type="submit">{{ i|multiply:20 }}</button>
+            </form>
+        {% endfor %}
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- Order Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Order Number</th>
+                <th>Customer Name</th>
+                <th>Order Date</th>
+                <th>Status</th>
+                <th>Days Old</th>
+                <th>User Notes</th>
+                <!-- Add more headers as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in page_obj %}
+            <tr>
+                <td><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a></td>
+                <td><a href="{% url 'customer_orders' order.customer.customer_id %}">{{ order.customer.name }}</a></td>
+                <td>{{ order.order_date }}</td>
+                <td class="{% if order.status == 'Complete' %}status-green{% elif order.status == 'Pending' %}status-orange{% else %}status-red{% endif %}">{{ order.status }}</td>
+                <td id="days-old-{{ forloop.counter }}"></td> <!-- Placeholder for Days Old -->
+                <td>
+                    <div class="notes-container">
+                        <form method="post" action="{% url 'update_order_notes' %}">
+                            {% csrf_token %}
+                            <textarea name="user_notes" class="autoresize" placeholder="Add notes here">{{ order.user_notes|default_if_none:"" }}</textarea>
+                            <input type="submit" value="Save" class="save-btn">
+                            <input type="hidden" name="order_id" value="{{ order.sage_order_number }}">
+                        </form>
+                    </div>
+                </td>
+                <!-- Add more data cells as needed -->
+            </tr>
+            {% endfor %}
+
+            
+
+        </tbody>
+    </table>
+
+    <!-- Show More Button -->
+    {% if page_obj.has_next %}
         <form method="get" action=".">
             <!-- Include existing search parameters as hidden fields -->
             <input type="hidden" name="customer_search" value="{{ customer_query }}">
             <input type="hidden" name="order_search" value="{{ order_query }}">
             <!-- Include other search fields as hidden inputs -->
 
-            <!-- Set number of orders -->
-            <input type="hidden" name="num_orders" value="{{ i|multiply:20 }}">
-            <button type="submit">{{ i|multiply:20 }}</button>
+            <!-- Current number of orders to show -->
+            <input type="hidden" name="num_orders" value="{{ num_orders }}">
+            <input type="hidden" name="show_more" value="true">
+            <button type="submit" id="show-more">Show More</button>
         </form>
-    {% endfor %}
-</div>
+    {% endif %}
 
 
 
 
 
+    <script>
+        // Script to store the scroll position
+        document.getElementById('show-more').addEventListener('click', function() {
+            localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+        });
+
+        // Script to restore the scroll position
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('scrollPosition') !== null) {
+                window.scrollTo(0, localStorage.getItem('scrollPosition'));
+                localStorage.removeItem('scrollPosition'); // Clear the stored position
+            }
+        });
 
 
 
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.autoresize').forEach(function(textarea) {
+                function resizeTextarea() {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }
+                textarea.addEventListener('input', resizeTextarea, false);
+                resizeTextarea(); // Initialize size
+            });
+        });
 
-
-
-
-
-<!-- Order Table -->
-<table>
-    <thead>
-        <tr>
-            <th>Order Number</th>
-            <th>Customer Name</th>
-            <th>Order Date</th>
-            <th>Status</th>
-            <th>Days Old</th>
-            <!-- Add more headers as needed -->
-        </tr>
-    </thead>
-    <tbody>
-        {% for order in page_obj %}
-        <tr>
-            <td><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a></td>
-            <td><a href="{% url 'customer_orders' order.customer.customer_id %}">{{ order.customer.name }}</a></td>
-            <td>{{ order.order_date }}</td>
-            <td class="{% if order.status == 'Complete' %}status-green{% elif order.status == 'Pending' %}status-orange{% else %}status-red{% endif %}">{{ order.status }}</td>
-            <td id="days-old-{{ forloop.counter }}"></td> <!-- Placeholder for Days Old -->
-            <!-- Add more data cells as needed -->
-        </tr>
-        {% endfor %}
-
-        
-
-    </tbody>
-</table>
-
-<!-- Show More Button -->
-{% if page_obj.has_next %}
-    <form method="get" action=".">
-        <!-- Include existing search parameters as hidden fields -->
-        <input type="hidden" name="customer_search" value="{{ customer_query }}">
-        <input type="hidden" name="order_search" value="{{ order_query }}">
-        <!-- Include other search fields as hidden inputs -->
-
-        <!-- Current number of orders to show -->
-        <input type="hidden" name="num_orders" value="{{ num_orders }}">
-        <input type="hidden" name="show_more" value="true">
-        <button type="submit" id="show-more">Show More</button>
-    </form>
-{% endif %}
-
-
-
-
-
-<script>
-    // Script to store the scroll position
-    document.getElementById('show-more').addEventListener('click', function() {
-        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
-    });
-
-    // Script to restore the scroll position
-    document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition'); // Clear the stored position
-        }
-    });
-</script>
+    </script>
 
 
 
 {% endblock %}
-
-
-
-
-

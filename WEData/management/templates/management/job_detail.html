@@ -1,36 +1,79 @@
 {% extends 'management/base.html' %}
-
+{% load custom_filters %}
 {% block content %}
     <h2>Job Details: {{ job_id }}</h2>
 
-    <h3>Order to Job Bridge</h3>
-    {% for job_bridge in job_bridges %}
-        <p>Part ID: {{ job_bridge.part_id }}</p>
-        <!-- Display other fields from job_bridge -->
-    {% endfor %}
+    <h3>Parts Linked to Job</h3>
+    <table>
+        <tr>
+            <th>Part ID</th>
+            <th>Product Code</th>
+            <!-- Add more headers as needed -->
+        </tr>
+        {% for part in parts %}
+            <tr>
+                <td>{{ part.part_id }}</td>
+                <td>{{ part.product_code }}</td>
+                <!-- Add more part details as needed -->
+            </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Orders Linked to Parts</h3>
+    <table>
+        <tr>
+            <th>Order Number</th>
+            <th>Customer</th>
+            <th>Order Date</th>
+            <!-- Add more headers as needed -->
+        </tr>
+        {% for order in orders %}
+            <tr>
+                <td>{{ order.sage_order_number }}</td>
+                <td>{{ order.customer.name }}</td>
+                <td>{{ order.order_date }}</td>
+                <!-- Add more order details as needed -->
+            </tr>
+        {% endfor %}
+    </table>
 
     <h3>Picking Process</h3>
-    {% for picking in picking_infos %}
-        <p>Status: {{ picking.picking_status }}</p>
-        <p>Date Complete: {{ picking.date_complete }}</p>
-        <p>Notes: {{ picking.notes }}</p>
-    {% endfor %}
+    <table>
+        <tr>
+            <th>Part ID</th>
+            <th>Picking Status</th>
+            <th>Part Status</th>
+            <!-- ... other headers ... -->
+        </tr>
+        {% for picking in picking_infos %}
+            <tr>
+                <td>{{ picking.part_id }}</td>
+                <td>{{ picking.picking_status }}</td>
+                <td>{{ picking_parts_status|get_item:picking.part_id }}</td>
+                <!-- ... other details ... -->
+            </tr>
+        {% endfor %}
+    </table>
 
     <h3>CNC Machine Information</h3>
-    {% for cnc in cnc_infos %}
-        <p>Machine ID: {{ cnc.machine_id }}</p>
-        <p>Sheets: {{ cnc.sheets }}</p>
-        <p>Machine Stage: {{ cnc.machine_stage }}</p>
-        <p>Date Complete: {{ cnc.date_complete }}</p>
-        <p>Notes: {{ cnc.notes }}</p>
-        <p>Total Pieces: {{ cnc.total_pieces }}</p>
-    {% endfor %}
+    <table>
+        <tr>
+            <th>Part ID</th>
+            <th>Machine Status</th>
+            <th>Part Status</th>
+            <!-- ... other headers ... -->
+        </tr>
+        {% for cnc in cnc_infos %}
+            <tr>
+                <td>{{ cnc.part_id }}</td>
+                <td>{{ cnc.machine_stage }}</td>
+                <td>{{ cnc_parts_status|get_item:cnc.part_id }}</td>
+                <!-- ... other details ... -->
+            </tr>
+        {% endfor %}
+    </table>
 
     <h3>Workshop Information</h3>
-    {% for workshop in workshop_infos %}
-        <p>Workshop ID: {{ workshop.workshop_id }}</p>
-        <p>Assembly Status: {{ workshop.assembly_status }}</p>
-        <p>Notes: {{ workshop.notes }}</p>
-    {% endfor %}
+    <!-- Similar table structure for Workshop Information -->
 
 {% endblock %}

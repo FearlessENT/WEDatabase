@@ -19,6 +19,7 @@ CREATE TABLE `Order` (
     Value VARCHAR(255),
     OrderNotes TEXT,
     Status VARCHAR(50) DEFAULT 'Pending',
+    UserNotes TEXT,
     FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
 );
 
