@@ -1,39 +1,118 @@
 {% extends 'management/base.html' %}
+{% load custom_filters %}
+{% load humanize %}
 
 {% block content %}
-<h2>{{ customer.name }}</h2>
+<h2>Customer Orders for {{ customer.name }}</h2>
+
+
+
+<!-- Display Total Value -->
+<div class="customer-total-value">
+    <h3>Total Value of Orders: £ {{ total_value|floatformat:2|intcomma }}</h3>
+</div>
+
+
+
+
+<!-- Filters and Search Form -->
+<div class="filter-form">
+    <form method="get" action="" class = "search-form">
+        <!-- Status Filter Dropdown -->
+        <select name="status_filter" onchange="this.form.submit()">
+            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+            <option value="incomplete" {% if status_filter == 'incomplete' %}selected{% endif %}>Incomplete</option>
+            <option value="complete" {% if status_filter == 'complete' %}selected{% endif %}>Complete</option>
+        </select>
+
+        <!-- Search Fields -->
+        <input type="text" name="order_search" placeholder="Order Number" value="{{ order_query }}">
+        <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}">
+        <input type="submit" value="Search">
+    </form>
+</div>
+
+
+
+
+
+<!-- Number of Orders Selection -->
+<div class="num-orders-form">
+    <label for="num-orders-buttons">Orders per page:</label>
+    {% for i in num_range %}
+        <form method="get" action=".">
+            <!-- Include existing search parameters as hidden fields -->
+            <input type="hidden" name="customer_search" value="{{ customer_query }}">
+            <input type="hidden" name="order_search" value="{{ order_query }}">
+            <input type="hidden" name="product_search" value="{{ product_query }}">
+            <input type="hidden" name="job_search" value="{{ job_query }}">
+
+            <!-- Set number of orders -->
+            <input type="hidden" name="num_orders" value="{{ i|multiply:20 }}">
+            <button type="submit">{{ i|multiply:20 }}</button>
+        </form>
+    {% endfor %}
+</div>
+
+<!-- Order Table -->
 <table>
     <thead>
         <tr>
-            <th><a href="?sort={% if current_sort_field == 'sage_order_number' and current_sort_direction == '-' %}{% else %}-{% endif %}sage_order_number">Order Number</a></th>
-            <th><a href="?sort={% if current_sort_field == 'order_date' and current_sort_direction == '-' %}{% else %}-{% endif %}order_date">Date Placed</a></th>
-            <th>Product Name</th> <!-- Not sortable -->
-            <th><a href="?sort={% if current_sort_field == 'delivery_postcode' and current_sort_direction == '-' %}{% else %}-{% endif %}delivery_postcode">Delivery Postcode</a></th>
-            <th><a href="?sort={% if current_sort_field == 'order_notes' and current_sort_direction == '-' %}{% else %}-{% endif %}order_notes">Order Notes</a></th>
-            <th><a href="?sort={% if current_sort_field == 'estimated_delivery_wkc' and current_sort_direction == '-' %}{% else %}-{% endif %}estimated_delivery_wkc">Estimated Delivery</a></th>
+            <th>Order Number</th>
+            <th>Order Date</th>
+            <th>Delivery Postcode</th>
+            <th>Estimated Delivery Week</th>
+            <th>Order Notes</th>
+            <th>Status</th>
+            <!-- Add more headers as needed -->
         </tr>
     </thead>
-    
-    
-    
-    
-    
     <tbody>
-        {% for order in orders %}
+        {% for order in page_obj %}
         <tr>
             <td><a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a></td>
             <td>{{ order.order_date }}</td>
-            <td>
-                {% for part in order.part_set.all %}
-                    {{ part.product_code.product_description }}<br>
-                {% endfor %}
-            </td>
             <td>{{ order.delivery_postcode }}</td>
-            <td>{{ order.order_notes }}</td>
             <td>{{ order.estimated_delivery_wkc }}</td>
+            <td>{{ order.order_notes }}</td>
+            <td class="{% if order.status == 'Complete' %}status-green{% elif order.status == 'Pending' %}status-orange{% else %}status-red{% endif %}">{{ order.status }}</td>
+            
+            <!-- Add more data cells as needed -->
         </tr>
+        {% empty %}
+        <tr><td colspan="3">No orders found.</td></tr>
         {% endfor %}
     </tbody>
-    
 </table>
+
+<!-- Show More Button -->
+{% if page_obj.has_next %}
+    <form method="get" action="." id="show-more-form">
+        <!-- Include existing search parameters as hidden fields -->
+        <input type="hidden" name="customer_search" value="{{ customer_query }}">
+        <input type="hidden" name="order_search" value="{{ order_query }}">
+        <input type="hidden" name="product_search" value="{{ product_query }}">
+        <input type="hidden" name="job_search" value="{{ job_query }}">
+
+        <!-- Current number of orders to show -->
+        <input type="hidden" name="num_orders" value="{{ num_orders }}">
+        <input type="hidden" name="show_more" value="true">
+        <button type="submit" id="show-more">Show More</button>
+    </form>
+{% endif %}
+
+
+<script>
+    document.getElementById('show-more').addEventListener('click', function() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    });
+
+    window.onload = function() {
+        if (localStorage.getItem('scrollPosition')) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition');
+        }
+    };
+</script>
+
 {% endblock %}

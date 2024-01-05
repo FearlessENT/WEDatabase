@@ -42,3 +42,17 @@ document.addEventListener("DOMContentLoaded", function() {
         order.textContent = daysOld;
     });
 });
+
+
+
+
+document.getElementById('show-more').addEventListener('click', function() {
+    localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+});
+
+window.onload = function() {
+    if (localStorage.getItem('scrollPosition')) {
+        window.scrollTo(0, localStorage.getItem('scrollPosition'));
+        localStorage.removeItem('scrollPosition');
+    }
+};
