@@ -66,7 +66,7 @@ def order_list(request):
     if product_query:
         orders = orders.filter(part__product_code__icontains=product_query)
     if job_query:
-        orders = orders.filter(job__icontains=job_query)
+        orders = Order.objects.filter(part__ordertojobbridge__job__icontains=job_query).distinct()
 
     # Apply status filter
     if status_filter == 'complete':
@@ -320,3 +320,23 @@ def update_order_notes(request):
 #         'jobs': jobs,
 #         'job_query': job_query
 #     })
+
+
+
+
+
+from django.shortcuts import render
+from .models import Order, Part, OrdertoJobBridge
+
+def job_search_results(request):
+    job_query = request.GET.get('job_search', '')
+
+    if job_query:
+        orders = Order.objects.filter(part__ordertojobbridge__job__icontains=job_query).distinct()
+    else:
+        orders = Order.objects.none()
+
+    return render(request, 'management/job_search_results.html', {
+        'orders': orders,
+        'job_query': job_query
+    })

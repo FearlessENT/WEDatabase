@@ -1,0 +1,18 @@
+{% extends 'management/base.html' %}
+
+{% block content %}
+    <h2>Job Search Results for "{{ job_query }}"</h2>
+    <!-- Display search results for jobs -->
+    <table>
+        <!-- Table headers -->
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <!-- Display order details related to the job -->
+                </tr>
+            {% empty %}
+                <p>No orders found for job "{{ job_query }}".</p>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
