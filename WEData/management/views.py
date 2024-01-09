@@ -298,3 +298,25 @@ def update_order_notes(request):
         order.save()
 
         return redirect('order_list')  # Redirect back to the order list page
+
+
+
+
+
+
+
+
+# from .models import Job
+
+# def job_search(request):
+#     job_query = request.GET.get('job_query', '')
+
+#     # Fetch jobs based on the search query
+#     jobs = Job.objects.filter(job_number__icontains=job_query)
+
+#     # Additional logic to fetch related data
+
+#     return render(request, 'management/job_search.html', {
+#         'jobs': jobs,
+#         'job_query': job_query
+#     })

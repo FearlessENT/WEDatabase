@@ -16,12 +16,15 @@
             <input type="hidden" name="customer_search" value="{{ customer_query }}">
             <input type="hidden" name="order_search" value="{{ order_query }}">
             <input type="hidden" name="product_search" value="{{ product_query }}">
-            <input type="hidden" name="job_search" value="{{ job_query }}">
+            <!-- <input type="hidden" name="job_search" value="{{ job_query }}"> -->
+            <input type="text" name="job_search" placeholder="Job Number" value="{{ job_query }}">
+            <input type="submit" value="Search">
             <input type="hidden" name="num_orders" value="{{ num_orders }}">
         
             <noscript><input type="submit" value="Filter"></noscript> <!-- Fallback for no JavaScript -->
         </form>
         
+
         
         
 

@@ -32,8 +32,16 @@
 
 
     
-
-
+    <h3>Order notes</h3>
+    <div class="notes-container">
+        <form method="post" action="{% url 'update_order_notes' %}">
+            {% csrf_token %}
+            <textarea name="user_notes" class="autoresize" placeholder="Add notes here"></textarea>
+            <input type="submit" value="Save" class="save-btn">
+            <input type="hidden" name="order_id" value="{{ order.sage_order_number }}">
+        </form>
+    </div>
+    
 
 
 
@@ -78,4 +86,21 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.autoresize').forEach(function(textarea) {
+                function resizeTextarea() {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }
+                textarea.addEventListener('input', resizeTextarea, false);
+                resizeTextarea(); // Initialize size
+            });
+        });
+    </script>
+    
+
+
+
 {% endblock %}
