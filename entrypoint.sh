@@ -8,7 +8,7 @@
 wait_for_db() {
     echo "waiting for database"
 
-    sleep 300
+    sleep 15
 
     echo "database ready"
 }

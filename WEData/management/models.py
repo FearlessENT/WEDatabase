@@ -55,6 +55,16 @@ class PartDescription(models.Model):
 
 
 
+class Job(models.Model):
+    job_id = models.AutoField(primary_key=True, db_column='JOBID')
+    job_name = models.CharField(max_length=255, unique=True, db_column='JobName')
+
+    class Meta:
+        db_table = 'job'
+
+    def __str__(self):
+        return self.job_name
+
 
 
 
@@ -66,14 +76,13 @@ class Part(models.Model):
     machine_status = models.CharField(max_length=255, db_column='MachineStatus')
     picking_status = models.CharField(max_length=255, db_column='PickingStatus')
     assembly_status = models.CharField(max_length=255, db_column='AssemblyStatus')
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, db_column='JOBID')
 
     class Meta:
         db_table = 'part'
 
     def __str__(self):
         return str(self.part_id)
-
-
 
 
 
