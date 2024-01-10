@@ -340,3 +340,24 @@ def job_search_results(request):
         'orders': orders,
         'job_query': job_query
     })
+
+
+
+
+from django.shortcuts import render
+from .models import OrdertoJobBridge
+from django.core.paginator import Paginator
+
+def job_list(request):
+    # Fetch distinct job numbers
+    unique_job_numbers = OrdertoJobBridge.objects.values_list('job', flat=True).distinct()
+
+    # Pagination setup
+    num_jobs = int(request.GET.get('num_jobs', 10))  # Default to 10 jobs per page
+    paginator = Paginator(unique_job_numbers, num_jobs)
+    page = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page)
+
+    return render(request, 'management/job_list.html', {
+        'page_obj': page_obj
+    })

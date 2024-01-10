@@ -1,0 +1,15 @@
+{% extends 'management/base.html' %}
+
+{% block content %}
+<h2>Jobs</h2>
+<div>
+    {% for job_number in page_obj %}
+    <div>
+        <!-- Hyperlink to the job detail page -->
+        <h3><a href="{% url 'job_detail' job_number %}">Job Number: {{ job_number }}</a></h3>
+    </div>
+    {% empty %}
+    <p>No jobs found.</p>
+    {% endfor %}
+</div>
+{% endblock %}
