@@ -16,11 +16,6 @@
             <input type="hidden" name="customer_search" value="{{ customer_query }}">
             <input type="hidden" name="order_search" value="{{ order_query }}">
             <input type="hidden" name="product_search" value="{{ product_query }}">
-            <!-- <input type="hidden" name="job_search" value="{{ job_query }}"> -->
-            <form method="get" action="{% url 'job_search_results' %}" class="search-form">
-                <input type="text" name="job_search" placeholder="Search by Job Number">
-                <input type="submit" value="Search Jobs">
-            </form>
             <input type="hidden" name="num_orders" value="{{ num_orders }}">
         
             <noscript><input type="submit" value="Filter"></noscript> <!-- Fallback for no JavaScript -->
@@ -52,7 +47,6 @@
         <!-- Order Details Search -->
         <input type="text" name="order_search" placeholder="Order Number" value="{{ order_query }}">
         <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}">
-        <input type="text" name="job_search" placeholder="Job" value="{{ job_query }}">
 
         <input type="submit" value="Search">
     </form>

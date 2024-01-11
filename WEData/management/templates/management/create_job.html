@@ -1,0 +1,39 @@
+{% extends 'management/base.html' %}
+{% block content %}
+    <div class="create-job-container">
+        <!-- Top Section -->
+        <div class="top-section">
+            <!-- Job Creation Form -->
+            <div class="job-creation-form">
+                <form method="post" action="">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit">Save Job</button>
+                </form>
+            </div>
+            <!-- Current Parts in Job Table (To be implemented) -->
+            <div class="current-parts-table">
+                <!-- Implement table here -->
+            </div>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="unassigned-parts-table">
+            <h3>Unassigned Parts</h3>
+            <table>
+                <tr>
+                    <th>Part ID</th>
+                    <th>Product Code</th>
+                    <!-- Add more headers as needed -->
+                </tr>
+                {% for part in unassigned_parts %}
+                <tr>
+                    <td>{{ part.part_id }}</td>
+                    <td>{{ part.product_code }}</td>
+                    <!-- Implement 'Add to Job' button functionality -->
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock %}

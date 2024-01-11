@@ -66,7 +66,7 @@ def order_list(request):
     if product_query:
         orders = orders.filter(part__product_code__icontains=product_query)
     if job_query:
-        orders = Order.objects.filter(part__ordertojobbridge__job__icontains=job_query).distinct()
+        orders = Order.objects.filter(part__job__job_name__icontains=job_query).distinct()
 
     # Apply status filter
     if status_filter == 'complete':
@@ -174,32 +174,20 @@ def customer_orders(request, customer_id):
 
 
 
-from django.shortcuts import get_object_or_404
-from .models import Order, Part, OrdertoJobBridge
+from django.shortcuts import render, get_object_or_404
+from .models import Order, Part, Job
 
 def order_detail(request, sage_order_number):
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
-    parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code')
+    parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code', 'job')
 
-    # Fetch related job information for each part
-    parts_with_jobs = [
-        {
-            'part': part,
-            'job': OrdertoJobBridge.objects.filter(part_id=part.part_id).first(),  # Adjust field name as per your model
-        }
-        for part in parts
-    ]
-
+    # No need to fetch job information separately as it's already joined with parts
     cleaned_order_value = clean_value(order.value)
 
     return render(request, 'management/order_detail.html', {
         'order': order,
-        'parts_with_jobs': parts_with_jobs
+        'parts': parts
     })
-
-
-
-
 
 
 
@@ -243,40 +231,43 @@ def api_orders(request):
 
 
 
-
-from django.shortcuts import render
-from .models import OrdertoJobBridge, PickingProcess, CNCMachine, Workshop, Part, Order
+from django.shortcuts import render, get_object_or_404
+from .models import Job, Part, Order, PickingProcess, CNCMachine, Workshop
 
 def job_detail(request, job_id):
+    # Ensure that job_id is correctly used to query the Job model
+    job = get_object_or_404(Job, job_id=job_id)
+
     # Fetch parts linked to the job
-    parts = Part.objects.filter(ordertojobbridge__job=job_id)
+    parts = Part.objects.filter(job=job)
 
     # Fetch orders linked to those parts
-    orders = Order.objects.filter(part__ordertojobbridge__job=job_id).distinct()
+    orders = Order.objects.filter(part__job=job).distinct()
 
-    # Fetch picking and CNC info linked to the job using the job number string
-    picking_infos = PickingProcess.objects.filter(job__job=job_id)
-    cnc_infos = CNCMachine.objects.filter(job__job=job_id)
+    # Fetch picking info linked to the job
+    picking_infos = PickingProcess.objects.filter(job_id=job_id)
 
-    # Fetch parts status for picking and CNC processes
-    picking_parts_status = {part.part_id: part.picking_status for part in parts}
-    cnc_parts_status = {part.part_id: part.machine_status for part in parts}
+    # Fetch CNC machine info linked to the job
+    cnc_infos = CNCMachine.objects.filter(job_id=job_id)
+    # Fetch CNC machine information for each part
+    cnc_status = CNCMachine.objects.filter(job=job).first()
+    machining_status = cnc_status.machine_stage if cnc_status else 'Not Available'
+
+
 
     # Fetch workshop info linked to the job
-    workshop_infos = Workshop.objects.filter(sage_order_number__part__ordertojobbridge__job=job_id)
+    workshop_infos = Workshop.objects.filter(sage_order_number__part__job_id=job_id).distinct()
+
 
     return render(request, 'management/job_detail.html', {
-        'job_id': job_id,
+        'job': job,
         'parts': parts,
         'orders': orders,
         'picking_infos': picking_infos,
         'cnc_infos': cnc_infos,
-        'workshop_infos': workshop_infos,
-        'picking_parts_status': picking_parts_status,
-        'cnc_parts_status': cnc_parts_status
+        'machining_status': machining_status,
+        'workshop_infos': workshop_infos
     })
-
-
 
 
 
@@ -332,7 +323,7 @@ def job_search_results(request):
     job_query = request.GET.get('job_search', '')
 
     if job_query:
-        orders = Order.objects.filter(part__ordertojobbridge__job__icontains=job_query).distinct()
+        orders = Order.objects.filter(part__job__job_name__icontains=job_query).distinct()
     else:
         orders = Order.objects.none()
 
@@ -345,19 +336,81 @@ def job_search_results(request):
 
 
 from django.shortcuts import render
-from .models import OrdertoJobBridge
+from .models import Job, Part
 from django.core.paginator import Paginator
+from django.db.models import Max, Q
 
 def job_list(request):
-    # Fetch distinct job numbers
-    unique_job_numbers = OrdertoJobBridge.objects.values_list('job', flat=True).distinct()
+    job_query = request.GET.get('job_search', '')
+
+    # Fetch jobs along with the newest order date for each job
+    jobs = Job.objects.annotate(
+        newest_order_date=Max('part__sage_order_number__order_date')
+    )
+
+    # Apply job name search filter if provided
+    if job_query:
+        jobs = jobs.filter(job_name__icontains=job_query)
+
+    jobs = jobs.order_by('-newest_order_date')
+
+    num_jobs = int(request.GET.get('num_jobs', 30))  # Default to 10 jobs per page
+    show_more = request.GET.get('show_more', False)
+
+    if show_more:
+        num_jobs += 20  # Increase by 10 each time 'Show More' is clicked
 
     # Pagination setup
-    num_jobs = int(request.GET.get('num_jobs', 10))  # Default to 10 jobs per page
-    paginator = Paginator(unique_job_numbers, num_jobs)
-    page = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page)
+    paginator = Paginator(jobs, num_jobs)
+    page_obj = paginator.get_page(1)
 
     return render(request, 'management/job_list.html', {
-        'page_obj': page_obj
+        'page_obj': page_obj,
+        'job_query': job_query  # Pass the job query to the template
+    })
+
+
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from .models import Job
+
+def update_job_notes(request, job_id):
+    if request.method == 'POST':
+        job = get_object_or_404(Job, job_id=job_id)
+        job_notes = request.POST.get('job_notes')
+        job.notes = job_notes
+        job.save()
+
+        return redirect('job_detail', job_id=job.job_id)  # Redirect back to the job detail page
+
+
+
+
+
+
+
+
+
+from django.shortcuts import render, redirect
+from .models import Job, Part
+from .forms import CreateJobForm
+
+def create_job(request):
+    if request.method == 'POST':
+        form = CreateJobForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('job_list')  # Redirect to the job list page after creation
+
+    else:
+        form = CreateJobForm()
+
+    # Fetch parts not currently assigned to a job
+    unassigned_parts = Part.objects.filter(job__isnull=True)
+
+    return render(request, 'management/create_job.html', {
+        'form': form,
+        'unassigned_parts': unassigned_parts,
     })

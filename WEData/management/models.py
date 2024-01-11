@@ -58,6 +58,7 @@ class PartDescription(models.Model):
 class Job(models.Model):
     job_id = models.AutoField(primary_key=True, db_column='JOBID')
     job_name = models.CharField(max_length=255, unique=True, db_column='JobName')
+    job_notes = models.TextField(db_column = 'JobNotes')
 
     class Meta:
         db_table = 'job'
@@ -119,11 +120,10 @@ class CNCMachineDescription(models.Model):
 
 
 
-
 class CNCMachine(models.Model):
     cnc_machine_id = models.AutoField(primary_key=True, db_column='CNCMachineID')
     machine = models.ForeignKey(CNCMachineDescription, on_delete=models.CASCADE, db_column='MachineID')
-    job = models.ForeignKey(OrdertoJobBridge, on_delete=models.CASCADE, db_column='Job')
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, db_column='JobID')  # Updated to reference Job model
     sheets = models.CharField(max_length=255, db_column='Sheets')
     machine_stage = models.CharField(max_length=255, db_column='MachineStage')
     date_complete = models.DateTimeField(db_column='DateComplete')
@@ -139,10 +139,9 @@ class CNCMachine(models.Model):
 
 
 
-
 class PickingProcess(models.Model):
     picking_id = models.AutoField(primary_key=True, db_column='PickingID')
-    job = models.ForeignKey(OrdertoJobBridge, on_delete=models.CASCADE, db_column='Job')
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, db_column='JobID')  # Updated to reference Job model
     picking_status = models.CharField(max_length=255, db_column='PickingStatus')
     date_complete = models.DateTimeField(db_column='DateComplete')
     notes = models.TextField(db_column='Notes')
@@ -152,7 +151,6 @@ class PickingProcess(models.Model):
 
     def __str__(self):
         return str(self.picking_id)
-
 
 
 

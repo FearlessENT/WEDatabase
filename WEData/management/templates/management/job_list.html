@@ -1,15 +1,85 @@
 {% extends 'management/base.html' %}
 
 {% block content %}
-<h2>Jobs</h2>
-<div>
-    {% for job_number in page_obj %}
-    <div>
-        <!-- Hyperlink to the job detail page -->
-        <h3><a href="{% url 'job_detail' job_number %}">Job Number: {{ job_number }}</a></h3>
-    </div>
-    {% empty %}
-    <p>No jobs found.</p>
-    {% endfor %}
-</div>
+    <h2>All Jobs</h2>
+
+
+    <!-- Search Form -->
+    <form method="get" action="." class="search-form">
+        <input type="text" name="job_search" placeholder="Job Name" value="{{ job_query }}">
+        <input type="submit" value="Search">
+    </form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <table>
+        <thead>
+            <tr>
+                <th>Job Name</th>
+                <th>Number of Parts</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in page_obj %}
+                <tr>
+                    <td><a href="{% url 'job_detail' job_id=job.job_id %}">{{ job.job_name }}</a></td>
+                    <td>{{ job.part_set.count }}</td>
+                </tr>
+            {% empty %}
+                <p>No jobs found.</p>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Show More Button -->
+    {% if page_obj.has_next %}
+        <form method="get" action=".">
+            <!-- Include existing search parameters as hidden fields -->
+            <input type="hidden" name="num_jobs" value="{{ page_obj.paginator.per_page }}">
+            <input type="hidden" name="show_more" value="true">
+            <button type="submit" id="show-more">Show More</button>
+        </form>
+    {% endif %}
+
+
+
+<script>
+    // Script for Show More button and maintaining scroll position
+    document.getElementById('show-more').addEventListener('click', function() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('scrollPosition') !== null) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition'); // Clear the stored position
+        }
+    });
+
+    // Script for autoresizing textareas
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.autoresize').forEach(function(textarea) {
+            function resizeTextarea() {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            }
+            textarea.addEventListener('input', resizeTextarea, false);
+            resizeTextarea(); // Initialize size
+        });
+    });
+</script>
 {% endblock %}

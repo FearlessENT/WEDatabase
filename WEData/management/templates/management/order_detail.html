@@ -1,14 +1,12 @@
 {% extends 'management/base.html' %}
 {% load humanize %}
 
-
 {% block content %}
     <h2>Order Number: {{ order.sage_order_number }}</h2>
 
-
-
     <div class="order-details-container">
         <table class="order-details-table">
+            <!-- Order Details -->
             <tr>
                 <th>Customer</th>
                 <td>{{ order.customer.name }}</td>
@@ -30,8 +28,6 @@
         <!-- Add more fields as needed -->
     </div>
 
-
-    
     <h3>Order notes</h3>
     <div class="notes-container">
         <form method="post" action="{% url 'update_order_notes' %}">
@@ -41,15 +37,9 @@
             <input type="hidden" name="order_id" value="{{ order.sage_order_number }}">
         </form>
     </div>
-    
-
-
-
-
-
 
     <h3>Parts in this Order</h3>
-    <table class = "order-details-table">
+    <table class="order-details-table">
         <thead>
             <tr>
                 <th>Product Code</th>
@@ -61,32 +51,31 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in parts_with_jobs %}
+            {% for part in parts %}
                 <tr>
-                    <td>{{ item.part.product_code }}</td>
+                    <td>{{ part.product_code }}</td>
                     <td>
-                        {% if item.job %}
-                        <a href="{% url 'job_detail' job_id=item.job.job %}">{{ item.job.job }}</a>
+                        {% if part.job %}
+                        <a href="{% url 'job_detail' job_id=part.job.job_id %}">{{ part.job.job_name }}</a>
                         {% else %}
                             N/A
                         {% endif %}
                     </td>
-                    <td>{{ item.part.dept }}</td>
-                    <!-- <td>{{ item.part.machine_status }}</td>
-                    <td>{{ item.part.picking_status }}</td>
-                    <td>{{ item.part.assembly_status }}</td> -->
-                    <td class="{% if item.part.machine_status == 'Machined' %}status-green{% elif item.part.machine_status == 'In Progress' or item.part.machine_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ item.part.machine_status }}</td>
-                    <td class="{% if item.part.picking_status == 'Picked'%}status-green{% elif item.part.picking_status == 'In Progress' or item.part.picking_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ item.part.picking_status }}</td>
-                    <td class="{% if item.part.assembly_status == 'Built' or item.part.assembly_status == 'Goods Ready' %}status-green{% elif item.part.assembly_status == 'In Progress' or item.part.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ item.part.assembly_status }}</td>
+                    <td>{{ part.dept }}</td>
+                    <td class="{% if part.machine_status == 'Machined' %}status-green{% elif part.machine_status == 'In Progress' or part.machine_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.machine_status }}</td>
+                    <td class="{% if part.picking_status == 'Picked'%}status-green{% elif part.picking_status == 'In Progress' or part.picking_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.picking_status }}</td>
+                    <td class="{% if part.assembly_status == 'Built' or part.assembly_status == 'Goods Ready' %}status-green{% elif part.assembly_status == 'In Progress' or part.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.assembly_status }}</td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5">No parts found for this order.</td>
+                    <td colspan="6">No parts found for this order.</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+{% endblock %}
 
+{% block javascript %}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.autoresize').forEach(function(textarea) {
@@ -99,8 +88,4 @@
             });
         });
     </script>
-    
-
-
-
 {% endblock %}
