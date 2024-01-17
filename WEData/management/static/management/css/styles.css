@@ -294,3 +294,76 @@ textarea.autoresize {
 .save-btn:hover {
     background-color: #45a049; /* Darker shade on hover */
 }
+
+
+
+
+
+
+
+
+
+/* Style for the form group */
+.form-group {
+    margin-bottom: 15px;
+}
+
+/* Style for the label */
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Style for the textarea */
+.form-control.autoresize {
+    width: 90%; /* Full width */
+    padding: 10px; /* Padding inside the textarea */
+    border: 1px solid #ccc; /* Light grey border */
+    border-radius: 4px; /* Rounded corners */
+    font-family: Arial, sans-serif; /* Font style */
+    font-size: 14px; /* Font size */
+    line-height: 1.5; /* Line height for the text */
+    resize: none; /* Allow only vertical resizing */
+}
+
+/* Style for the textarea when it is focused */
+.form-control.autoresize:focus {
+    outline: none;
+    border-color: #007bff; /* Change border color when focused */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Add a glow effect */
+}
+
+
+.form-control {
+    display: block;
+    width: 90%;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+/* Apply this class specifically to your select element */
+.form-control-select {
+    -webkit-appearance: none;  /* Removes default styling of dropdown for Webkit browsers */
+    -moz-appearance: none;    /* Removes default styling of dropdown for Mozilla browsers */
+    appearance: none;         /* Removes default styling of dropdown for the rest */
+    background: url('path_to_custom_arrow_image') no-repeat right .75rem center/15px 15px; /* Path to your custom arrow image */
+    cursor: pointer;
+}
+
+.form-control-select:hover {
+    border-color: #80bdff;
+}
+
+.form-control-select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 .2rem rgba(0,123,255,.25);
+}

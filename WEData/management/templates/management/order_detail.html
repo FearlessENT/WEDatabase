@@ -23,6 +23,10 @@
                 <th>Order Value:</th>
                 <td>£ {{ order.value|intcomma }}</td>
             </tr>
+            <tr>
+                <th>Codes</th>
+                <td>{{ order.order_notes }}</td>
+            </tr>
             <!-- Add more rows as needed -->
         </table>
         <!-- Add more fields as needed -->

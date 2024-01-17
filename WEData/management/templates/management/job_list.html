@@ -31,6 +31,8 @@
             <tr>
                 <th>Job Name</th>
                 <th>Number of Parts</th>
+                <th>Job Notes</th>
+                <th>Assigned Machine</th>
             </tr>
         </thead>
         <tbody>
@@ -38,6 +40,30 @@
                 <tr>
                     <td><a href="{% url 'job_detail' job_id=job.job_id %}">{{ job.job_name }}</a></td>
                     <td>{{ job.part_set.count }}</td>
+                    <td>
+                        <div class="notes-container">
+                            <form method="post" action="{% url 'update_job_notes' %}">
+                                {% csrf_token %}
+                                <textarea name="job_notes" class="autoresize" placeholder="Add notes here">{{ job.job_notes|default_if_none:"" }}</textarea>
+                                <input type="submit" value="Save" class="save-btn">
+                                <input type="hidden" name="job_id" value="{{ job.job_id }}">
+                            </form>
+                        </div>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'update_job_machine' job.job_id %}" class="form-control form-control-select">
+                            {% csrf_token %}
+                            <select name="cnc_machine_id" onchange="this.form.submit()" class = 'form-control form-control-select'>
+                                <option value="">Select Machine</option>
+                                {% for machine in cnc_machines %}
+                                    <option value="{{ machine.machine_id }}" {% if job.CNCMachine_id == machine.machine_id %}selected{% endif %}>
+                                        {{ machine.machine_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        
+                    </td>
                 </tr>
             {% empty %}
                 <p>No jobs found.</p>
@@ -81,5 +107,31 @@
             resizeTextarea(); // Initialize size
         });
     });
+
+
+
+    document.querySelectorAll('.update-machine-form').forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const jobId = this.getAttribute('data-job-id');
+            const selectedMachine = this.querySelector('select[name="machine_id"]').value;
+
+            // AJAX request to update the machine for the job
+            fetch(`/update-job-machine/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 'job_id': jobId, 'machine_id': selectedMachine })
+            })
+            .then(response => response.json())
+            .then(data => {
+            })
+            .catch(error => {
+            });
+        });
+    });
+
 </script>
 {% endblock %}

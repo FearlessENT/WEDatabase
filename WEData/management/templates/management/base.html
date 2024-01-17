@@ -16,6 +16,7 @@
         <a href="{% url 'order_list' %}">Orders</a>
         <a href="{% url 'job_list' %}">Jobs</a>
         <a href="{% url 'create_job' %}">Create Job</a>
+        <a>Workshop Overview</a>
         <!-- Add more navigation links here -->
     </div>
     <div class="container">
@@ -24,4 +25,26 @@
         {% endblock %}
     </div>
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.autoresize').forEach(function(textarea) {
+        function resizeTextarea() {
+            // Set height to 'auto' to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Calculate the height difference which might be caused by border etc.
+            var borderHeight = textarea.offsetHeight - textarea.clientHeight;
+            // Set the height only if the content doesn't fit anymore
+            if (textarea.scrollHeight + borderHeight > textarea.clientHeight) {
+                textarea.style.height = textarea.scrollHeight + 'px';
+            }
+        }
+        // Initialize resize on page load
+        resizeTextarea();
+        // Apply resizeTextarea on input event
+        textarea.addEventListener('input', resizeTextarea, false);
+    });
+});
+
+</script>
 </html>

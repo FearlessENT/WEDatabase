@@ -5,17 +5,74 @@
         <div class="top-section">
             <!-- Job Creation Form -->
             <div class="job-creation-form">
-                <form method="post" action="">
+                <form method="post" action="" class = "search-form">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit">Save Job</button>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.job_name.id_for_label }}">Job name:</label>
+                            {{ form.job_name }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.job_notes.id_for_label }}">Job notes:</label>
+                            {{ form.job_notes }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.CNCMachine.id_for_label }}">CNC Machine:</label>
+                            {{ form.CNCMachine }}
+                        </div>
+                    </div>
+                    
+                    
+                    
+
+
+
+
+
+                    <!-- Job Notes Section -->
+                    <!-- <div class="form-group">
+                        <label for="id_job_notes">Job Notes:</label>
+                        <textarea id="id_job_notes" name="job_notes" class="form-control autoresize" placeholder="Add notes here"></textarea>
+                    </div> -->
+
+
+
+
+                    <button type="submit" class = "save-btn">Save Job</button>
                 </form>
             </div>
-            <!-- Current Parts in Job Table (To be implemented) -->
+
             <div class="current-parts-table">
-                <!-- Implement table here -->
+                <h3>Current Parts in Job</h3>
+                <table>
+                    <tr>
+                        <th>Part ID</th>
+                        <th>Product Code</th>
+                        <th>Product Description</th>
+                        <th>Sage Order Number</th>
+                        <th>Customer Name</th>
+                        <th>Order Date</th>
+                        <th>Estimated Delivery</th>
+                    </tr>
+                    <tbody>
+                        {% for part in current_parts %}
+                        <tr>
+                            <td>{{ part.part_id }}</td>
+                            <td>{{ part.product_code }}</td>
+                            <td>{{ part.SageOrderNumber }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+
         </div>
+
+
+
+        <input type="text" id="part-search" placeholder="Search by Sage Order Number...">
+
+
 
         <!-- Bottom Section -->
         <div class="unassigned-parts-table">
@@ -24,16 +81,159 @@
                 <tr>
                     <th>Part ID</th>
                     <th>Product Code</th>
+                    <th>Product Description</th>
+                    <th>Sage Order Number</th>
+                    <th>Customer Name</th>
+                    <th>Order Date</th>
+                    <th>Estimated Delivery</th>
                     <!-- Add more headers as needed -->
                 </tr>
-                {% for part in unassigned_parts %}
-                <tr>
-                    <td>{{ part.part_id }}</td>
-                    <td>{{ part.product_code }}</td>
-                    <!-- Implement 'Add to Job' button functionality -->
-                </tr>
-                {% endfor %}
+                <tbody id="unassigned-parts">
+                    {% for part in unassigned_parts %}
+                    <tr>
+                        <td>{{ part.part_id }}</td>
+                        <td>{{ part.product_code }}</td>
+                        <td>{{ part.product_code.product_description }}</td>
+                        <td>
+                            <a href="{% url 'order_detail' part.sage_order_number.sage_order_number %}" target="_blank">
+                                {{ part.sage_order_number.sage_order_number }}
+                            </a>
+                        <td>
+                            <a href="{% url 'customer_orders' part.sage_order_number.customer.customer_id %}" target="_blank">
+                                {{ part.sage_order_number.customer.name }}
+                            </a>
+                        </td>
+                        <td>{{ part.sage_order_number.order_date }}</td>
+                        <td>{{ part.sage_order_number.estimated_delivery_wkc }}</td>
+                        <td>
+                            <button class="add-to-job" data-part-id="{{ part.part_id }}">Add to Job</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('part-search');
+            const unassignedPartsTable = document.getElementById('unassigned-parts');
+    
+            searchInput.addEventListener('input', function() {
+                const searchTerm = searchInput.value;
+    
+                fetch(`/management/ajax/search-parts/?search_term=${encodeURIComponent(searchTerm)}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    unassignedPartsTable.innerHTML = '';
+    
+                    data.forEach(part => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${part.part_id}</td>
+                            <td>${part.product_code}</td>
+                            <td>${part.product_description}</td>
+                            <td><a href="/path/to/order/detail/${part.sage_order_number}">${part.sage_order_number}</a></td>
+                            <td><a href="/path/to/customer/orders/${part.customer_name}">${part.customer_name}</a></td>
+                            <td>${part.order_date}</td>
+                            <td>${part.estimated_delivery}</td>
+                            <td>
+                                <button class="add-to-job" data-part-id="${part.part_id}" onclick="handleAddToJobClick.call(this, event)">Add to Job</button>
+                            </td>
+                        `;
+                        unassignedPartsTable.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+            });
+    
+            window.handleAddToJobClick = function(event) {
+                event.preventDefault();
+                const partId = this.dataset.partId;
+    
+                fetch("{% url 'add_part_to_job' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'part_id': partId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const currentPartsTable = document.querySelector('.current-parts-table table tbody');
+                    const clickedRow = this.closest('tr');
+                    const newRow = clickedRow.cloneNode(true);
+    
+                    const newButton = newRow.querySelector('.add-to-job');
+                    newButton.textContent = 'Remove from Job';
+                    newButton.classList.remove('add-to-job');
+                    newButton.classList.add('remove-from-job');
+                    newButton.removeEventListener('click', handleAddToJobClick);
+                    newButton.addEventListener('click', handleRemoveFromJobClick);
+    
+                    currentPartsTable.appendChild(newRow);
+                    clickedRow.parentNode.removeChild(clickedRow);
+                })
+                .catch(error => {
+                    console.error('Error during AJAX request:', error);
+                });
+            };
+    
+            function handleRemoveFromJobClick(event) {
+                event.preventDefault();
+                const partId = this.dataset.partId;
+    
+                fetch("{% url 'remove_part_from_job' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'part_id': partId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const unassignedPartsTable = document.querySelector('.unassigned-parts-table table tbody');
+                    const clickedRow = this.closest('tr');
+                    const newRow = clickedRow.cloneNode(true);
+    
+                    const newButton = newRow.querySelector('.remove-from-job');
+                    newButton.textContent = 'Add to Job';
+                    newButton.classList.remove('remove-from-job');
+                    newButton.classList.add('add-to-job');
+                    newButton.removeEventListener('click', handleRemoveFromJobClick);
+                    newButton.addEventListener('click', handleAddToJobClick);
+    
+                    unassignedPartsTable.appendChild(newRow);
+                    clickedRow.parentNode.removeChild(clickedRow);
+                })
+                .catch(error => {
+                    console.error('Error during AJAX request:', error);
+                });
+            }
+    
+            document.querySelectorAll('.add-to-job').forEach(button => {
+                button.addEventListener('click', handleAddToJobClick);
+            });
+        });
+    </script>
+    
+    
+
 {% endblock %}
+
+
+
+
+
+
+

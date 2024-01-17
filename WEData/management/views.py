@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from .models import Order
 from django.db.models import Q
@@ -238,6 +239,18 @@ def job_detail(request, job_id):
     # Ensure that job_id is correctly used to query the Job model
     job = get_object_or_404(Job, job_id=job_id)
 
+
+    # Handle POST request for changing the CNC machine
+    if request.method == 'POST':
+        machine_id = request.POST.get('cnc_machine_id')
+        if machine_id:
+            job.CNCMachine_id = machine_id  # Update the machine ID
+        else:
+            job.CNCMachine = None  # Remove the machine assignment
+        job.save()
+        return redirect('job_detail', job_id=job_id)  # Redirect back to the same job detail page
+
+
     # Fetch parts linked to the job
     parts = Part.objects.filter(job=job)
 
@@ -253,7 +266,7 @@ def job_detail(request, job_id):
     cnc_status = CNCMachine.objects.filter(job=job).first()
     machining_status = cnc_status.machine_stage if cnc_status else 'Not Available'
 
-
+    cnc_machines = CNCMachineDescription.objects.all()
 
     # Fetch workshop info linked to the job
     workshop_infos = Workshop.objects.filter(sage_order_number__part__job_id=job_id).distinct()
@@ -266,7 +279,8 @@ def job_detail(request, job_id):
         'picking_infos': picking_infos,
         'cnc_infos': cnc_infos,
         'machining_status': machining_status,
-        'workshop_infos': workshop_infos
+        'workshop_infos': workshop_infos,
+        'cnc_machines': cnc_machines
     })
 
 
@@ -334,11 +348,10 @@ def job_search_results(request):
 
 
 
-
 from django.shortcuts import render
-from .models import Job, Part
+from .models import Job, Part, CNCMachineDescription
 from django.core.paginator import Paginator
-from django.db.models import Max, Q
+from django.db.models import Max
 
 def job_list(request):
     job_query = request.GET.get('job_search', '')
@@ -354,19 +367,23 @@ def job_list(request):
 
     jobs = jobs.order_by('-newest_order_date')
 
-    num_jobs = int(request.GET.get('num_jobs', 30))  # Default to 10 jobs per page
+    num_jobs = int(request.GET.get('num_jobs', 30))  # Default to 30 jobs per page
     show_more = request.GET.get('show_more', False)
 
     if show_more:
-        num_jobs += 20  # Increase by 10 each time 'Show More' is clicked
+        num_jobs += 20  # Increase by 20 each time 'Show More' is clicked
 
     # Pagination setup
     paginator = Paginator(jobs, num_jobs)
     page_obj = paginator.get_page(1)
 
+    # Fetch all CNC machines to populate the dropdowns
+    cnc_machines = CNCMachineDescription.objects.all()
+
     return render(request, 'management/job_list.html', {
         'page_obj': page_obj,
-        'job_query': job_query  # Pass the job query to the template
+        'job_query': job_query,
+        'cnc_machines': cnc_machines  # Pass the CNC machines to the template
     })
 
 
@@ -374,43 +391,216 @@ def job_list(request):
 
 
 from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect
 from .models import Job
 
-def update_job_notes(request, job_id):
+def update_job_notes(request):
     if request.method == 'POST':
-        job = get_object_or_404(Job, job_id=job_id)
+        job_id = request.POST.get('job_id')
         job_notes = request.POST.get('job_notes')
-        job.notes = job_notes
+
+        job = get_object_or_404(Job, job_id=job_id)
+        job.job_notes = job_notes
         job.save()
 
-        return redirect('job_detail', job_id=job.job_id)  # Redirect back to the job detail page
+        # Redirect back to the referring page
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            # Fallback redirect if referer URL is not available
+            return redirect('all_jobs')  # Replace 'all_jobs' with your default redirect URL
 
-
-
-
+    # Handle non-POST requests here
+    # ...
 
 
 
 
 
 from django.shortcuts import render, redirect
-from .models import Job, Part
 from .forms import CreateJobForm
+from .models import Job, Part
 
 def create_job(request):
     if request.method == 'POST':
         form = CreateJobForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('job_list')  # Redirect to the job list page after creation
+            new_job = form.save()
 
+            # Assign the temporarily stored parts to this new job
+            selected_parts = request.session.get('selected_parts', [])
+            Part.objects.filter(part_id__in=selected_parts).update(job=new_job)
+
+
+            # Clear the temporary storage
+            del request.session['selected_parts']
+
+            return redirect('job_list')
     else:
         form = CreateJobForm()
 
-    # Fetch parts not currently assigned to a job
-    unassigned_parts = Part.objects.filter(job__isnull=True)
+    
 
+
+
+
+
+
+    
+    unassigned_parts = Part.objects.filter(job__isnull=True).select_related(
+        'sage_order_number', 
+        'sage_order_number__customer', 
+        'product_code'  
+    )
     return render(request, 'management/create_job.html', {
-        'form': form,
-        'unassigned_parts': unassigned_parts,
+    'form': form,
+    'unassigned_parts': unassigned_parts,
     })
+
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+
+@csrf_exempt
+@require_POST
+def add_part_to_job(request):
+    try:
+        data = json.loads(request.body)
+        part_id = data.get('part_id')
+
+        # Store the part ID in the session
+        if 'selected_parts' not in request.session:
+            request.session['selected_parts'] = []
+        if part_id not in request.session['selected_parts']:
+            request.session['selected_parts'].append(part_id)
+            request.session.modified = True  # To ensure the session is saved
+
+        return JsonResponse({'status': 'success', 'message': 'Part added to job selection'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+
+
+@csrf_exempt
+@require_POST
+def remove_part_from_job(request):
+    try:
+        data = json.loads(request.body)
+        part_id = data.get('part_id')
+
+        # Remove the part ID from the session
+        selected_parts = request.session.get('selected_parts', [])
+        if part_id in selected_parts:
+            selected_parts.remove(part_id)
+            request.session['selected_parts'] = selected_parts
+            request.session.modified = True
+
+        return JsonResponse({'status': 'success', 'message': 'Part removed from job selection'})
+
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from .models import Job
+import json
+
+@csrf_exempt
+@require_POST
+def update_job_machine(request):
+    try:
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        machine_id = data.get('machine_id')
+
+
+        job = Job.objects.get(pk=job_id)
+        job.CNCMachine_id = machine_id
+        job.save()
+
+        return JsonResponse({'status': 'success', 'message': 'Job updated successfully'})
+
+    except Job.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Job not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+
+
+from django.shortcuts import get_object_or_404, redirect
+from .models import Job, CNCMachineDescription
+
+def update_job_machine(request, job_id):
+    if request.method == 'POST':
+        job = get_object_or_404(Job, pk=job_id)
+        machine_id = request.POST.get('cnc_machine_id')
+        if machine_id:
+            job.CNCMachine_id = machine_id  # Update the machine ID
+        else:
+            job.CNCMachine = None  # Remove the machine assignment
+        job.save()
+
+        return redirect('job_list')  # Redirect back to the job list
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.db.models.functions import Cast
+from django.db.models.fields import CharField
+from django.http import JsonResponse
+from django.core.serializers import serialize
+from .models import Part
+
+def search_parts_ajax(request):
+    if request.method == 'GET':
+        search_term = request.GET.get('search_term', '')
+
+        unassigned_parts = Part.objects.annotate(
+            str_sage_order_number=Cast('sage_order_number', CharField())
+        ).filter(
+            job__isnull=True,
+            str_sage_order_number__icontains=search_term
+        ).select_related('sage_order_number', 'sage_order_number__customer', 'product_code')
+
+        # Construct the JSON response manually
+        parts_data = []
+        for part in unassigned_parts:
+            part_data = {
+                'part_id': part.part_id,
+                'product_code': part.product_code.product_code if part.product_code else 'N/A',  # Assuming 'product_code' is a field in PartDescription
+                'product_description': part.product_code.product_description if part.product_code else 'N/A',
+                'sage_order_number': part.sage_order_number.sage_order_number if part.sage_order_number else 'N/A',
+                'customer_name': part.sage_order_number.customer.name if part.sage_order_number and part.sage_order_number.customer else 'N/A',
+                'order_date': part.sage_order_number.order_date.strftime('%Y-%m-%d') if part.sage_order_number and part.sage_order_number.order_date else 'N/A',
+                'estimated_delivery': part.sage_order_number.estimated_delivery_wkc.strftime('%Y-%m-%d') if part.sage_order_number and part.sage_order_number.estimated_delivery_wkc else 'N/A'
+            }
+            parts_data.append(part_data)
+
+        return JsonResponse(parts_data, safe=False)

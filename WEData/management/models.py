@@ -55,10 +55,34 @@ class PartDescription(models.Model):
 
 
 
+
+
+
+class CNCMachineDescription(models.Model):
+    machine_id = models.CharField(max_length=255, primary_key=True, db_column='MachineID')
+    machine_name = models.CharField(max_length=255, db_column='MachineName')
+
+    class Meta:
+        db_table = 'cncmachinedescription'
+
+    def __str__(self):
+        return self.machine_name
+
+
+
+
+
 class Job(models.Model):
     job_id = models.AutoField(primary_key=True, db_column='JOBID')
     job_name = models.CharField(max_length=255, unique=True, db_column='JobName')
     job_notes = models.TextField(db_column = 'JobNotes')
+    CNCMachine = models.ForeignKey(
+        CNCMachineDescription,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        db_column='CNCMachineID' 
+    )
 
     class Meta:
         db_table = 'job'
@@ -107,18 +131,6 @@ class OrdertoJobBridge(models.Model):
 
 
 
-class CNCMachineDescription(models.Model):
-    machine_id = models.CharField(max_length=255, primary_key=True, db_column='MachineID')
-    machine_name = models.CharField(max_length=255, db_column='MachineName')
-
-    class Meta:
-        db_table = 'cncmachinedescription'
-
-    def __str__(self):
-        return self.machine_name
-
-
-
 
 class CNCMachine(models.Model):
     cnc_machine_id = models.AutoField(primary_key=True, db_column='CNCMachineID')
@@ -154,7 +166,6 @@ class PickingProcess(models.Model):
 
 
 
-
 class WorkshopTypes(models.Model):
     workshop_id = models.AutoField(primary_key=True, db_column='WorkshopID')
     workshop_name = models.CharField(max_length=255, db_column='WorkshopName')
@@ -164,6 +175,7 @@ class WorkshopTypes(models.Model):
 
     def __str__(self):
         return self.workshop_name
+
 
 
 

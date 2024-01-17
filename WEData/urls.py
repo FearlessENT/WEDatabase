@@ -22,4 +22,5 @@ from .management import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('management/', include('WEData.management.urls')), 
+    
 ]

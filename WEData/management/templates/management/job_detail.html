@@ -4,13 +4,34 @@
     <h2>Job Details: {{ job.job_name }}</h2>
 
 
+
+    <!-- CNC Machine Assignment Form -->
+    <form method="post" action="{% url 'update_job_machine' job.job_id %}" >
+        {% csrf_token %}
+        <div>
+            <label for="id_cnc_machine">Assigned CNC Machine:</label>
+            <select name="cnc_machine_id" id="id_cnc_machine" onchange="this.form.submit()" class = 'form-control form-control-select'>
+                <option value="">Select Machine</option>
+                {% for machine in cnc_machines %}
+                    <option value="{{ machine.machine_id }}" {% if job.CNCMachine_id == machine.machine_id %}selected{% endif %}>
+                        {{ machine.machine_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+
+
+
     <h3>Job Notes</h3>
     <div class="notes-container">
-        <form method="post" action="{% url 'update_job_notes' job.job_id %}">
+        <form method="post" action="{% url 'update_job_notes' %}">
             {% csrf_token %}
-            <textarea name="job_notes" class="autoresize" placeholder="Add notes here">{{ job.notes }}</textarea>
+            <textarea name="job_notes" class="autoresize" placeholder="Add notes here">{{ job.job_notes }}</textarea>
             <input type="submit" value="Save" class="save-btn">
+            <input type="hidden" name="job_id" value="{{ job.job_id }}">
         </form>
+        
     </div>
 
 
@@ -142,16 +163,4 @@
 
 {% endblock %}
 {% block javascript %}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.autoresize').forEach(function(textarea) {
-                function resizeTextarea() {
-                    textarea.style.height = 'auto';
-                    textarea.style.height = textarea.scrollHeight + 'px';
-                }
-                textarea.addEventListener('input', resizeTextarea, false);
-                resizeTextarea(); // Initialize size
-            });
-        });
-    </script>
 {% endblock %}
