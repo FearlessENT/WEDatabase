@@ -28,6 +28,7 @@ python manage.py collectstatic
 
 
 
+
 # Create a superuser if SUPERUSER_CREATE is set to true
 # and if the superuser does not already exist
 if [ "$SUPERUSER_CREATE" = "true" ]; then

@@ -604,3 +604,29 @@ def search_parts_ajax(request):
             parts_data.append(part_data)
 
         return JsonResponse(parts_data, safe=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.shortcuts import render
+from .models import CNCMachine
+
+def cnc_machine_details(request):
+    cnc_machines = CNCMachine.objects.all()
+    return render(request, 'machining/cnc_machine_details.html', {'cnc_machines': cnc_machines})
