@@ -99,3 +99,14 @@ CREATE TABLE Workshop (
     FOREIGN KEY (SageOrderNumber) REFERENCES `Order`(SageOrderNumber),
     FOREIGN KEY (ProductCode) REFERENCES PartDescription(ProductCode)
 );
+
+
+
+-- Create Profile table linking auth_user to CNCMachineDescription
+CREATE TABLE Profile (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNIQUE NOT NULL,
+    cnc_machine_id VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES auth_user(id),
+    FOREIGN KEY (cnc_machine_id) REFERENCES CNCMachineDescription(MachineID)
+);

@@ -1,0 +1,41 @@
+{% extends "machining/base.html" %}
+
+{% block title %}
+{{ machines.first.machine.machine_name }} - CNC Operator Jobs
+{% endblock %}
+
+{% block content %}
+<div class="machine-list">
+    <h2>{{ machines.first.machine.machine_name }}</h2>
+    {% if machines %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Job Name</th>
+                <th>Sheets</th>
+                <th>Machine Stage</th>
+                <th>Date Complete</th>
+                <th>Notes</th>
+                <th>Total Pieces</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for machine in machines %}
+            <tr>
+                <td>{{ machine.cnc_machine_id }}</td>
+                <td><a href="{% url 'job_detail' job_id=machine.job.job_id %}">{{ machine.job.job_name }}</a></td>
+                <td>{{ machine.sheets }}</td>
+                <td>{{ machine.machine_stage }}</td>
+                <td>{{ machine.date_complete }}</td>
+                <td>{{ machine.notes }}</td>
+                <td>{{ machine.total_pieces }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No machines assigned.</p>
+    {% endif %}
+</div>
+{% endblock %}

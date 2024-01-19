@@ -8,6 +8,9 @@ from .views import create_job
 from .views import add_part_to_job
 from .views import update_job_machine
 from .views import search_parts_ajax
+from .views import cnc_operator_jobs
+from .views import CustomLoginView
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('orders/', views.order_list, name='order_list'),
@@ -26,6 +29,9 @@ urlpatterns = [
     path('update-job-machine/', update_job_machine, name='update_job_machine'),
     path('jobs/update-machine/<int:job_id>/', update_job_machine, name='update_job_machine'),
     path('ajax/search-parts/', search_parts_ajax, name='search_parts_ajax'),
+    path('cnc-operator-jobs/', cnc_operator_jobs, name='cnc-operator-jobs'),
+    path('login/', CustomLoginView.as_view(), name='login'),
+
  
 
     

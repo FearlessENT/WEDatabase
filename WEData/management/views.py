@@ -616,6 +616,11 @@ def search_parts_ajax(request):
 
 
 
+from django.contrib.auth.decorators import user_passes_test
+def is_machinist(user):
+    return user.groups.filter(name='machinist').exists()
+
+
 
 
 
@@ -626,7 +631,44 @@ def search_parts_ajax(request):
 
 from django.shortcuts import render
 from .models import CNCMachine
+from django.contrib.auth.decorators import login_required, user_passes_test
 
-def cnc_machine_details(request):
-    cnc_machines = CNCMachine.objects.all()
-    return render(request, 'machining/cnc_machine_details.html', {'cnc_machines': cnc_machines})
+@login_required
+@user_passes_test(is_machinist)
+def cnc_operator_jobs(request):
+    machines = []
+    if hasattr(request.user, 'profile') and request.user.profile.assigned_cnc_machine:
+        machine_id = request.user.profile.assigned_cnc_machine.machine_id
+        machines = CNCMachine.objects.filter(machine__machine_id=machine_id)  # Fetch CNCMachine records
+    return render(request, 'machining/cnc_operator_jobs.html', {'machines': machines})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.contrib.auth.views import LoginView
+from django.shortcuts import redirect
+
+class CustomLoginView(LoginView):
+    def get_success_url(self):
+        user = self.request.user
+        if user.profile.user_role == 'machinist':  # Assuming 'user_role' attribute in user profile
+            return '/cnc_operator_jobs'
+        else:
+            return '/default-page'
+
+
+
+
+
+

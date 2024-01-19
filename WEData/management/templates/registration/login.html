@@ -1,0 +1,28 @@
+{% extends "registration/base.html" %}  {# Assuming this extends your base template #}
+
+{% block title %}Login - WEData{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <h2>Login</h2>
+    <form method="post" action="{% url 'login' %}" class="login-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}">
+
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" name="username" id="username" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password" required>
+        </div>
+
+        <button type="submit" class="login-button">Login</button>
+    </form>
+    {% if form.errors %}
+        <p class="error-message">Your username and password didn't match. Please try again.</p>
+    {% endif %}
+</div>
+{% endblock %}

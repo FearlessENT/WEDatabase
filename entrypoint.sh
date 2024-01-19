@@ -46,7 +46,6 @@ fi
 
 
 
-
 # Start the Django app
 echo "Starting Django app..."
 exec "$@"
