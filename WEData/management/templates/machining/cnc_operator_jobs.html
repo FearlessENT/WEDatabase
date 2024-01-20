@@ -1,13 +1,33 @@
 {% extends "machining/base.html" %}
 
 {% block title %}
-{{ machines.first.machine.machine_name }} - CNC Operator Jobs
+{{ machine_name }} - CNC Operator Jobs
 {% endblock %}
 
 {% block content %}
+
+
+
 <div class="machine-list">
-    <h2>{{ machines.first.machine.machine_name }}</h2>
-    {% if machines %}
+    <h2>{{ machine_name }}</h2>
+
+
+        
+    <div class="filter-container">
+        <form method="get" action="." class = 'filter-form'>
+
+            <select name="machined_status" id="machined_status" onchange="this.form.submit()">
+                <option value="all" {% if machined_status == 'all' %}selected{% endif %}>All</option>
+                <option value="machined" {% if machined_status == 'machined' %}selected{% endif %}>Machined</option>
+                <option value="not_machined" {% if machined_status == 'not_machined' %}selected{% endif %}>Not Machined</option>
+            </select>
+        </form>
+    </div>
+
+
+
+
+    {% if page_obj %}
     <table>
         <thead>
             <tr>
@@ -16,19 +36,53 @@
                 <th>Sheets</th>
                 <th>Machine Stage</th>
                 <th>Date Complete</th>
-                <th>Notes</th>
+                <th>Job Notes</th>
+                <th>Machine Notes</th>
                 <th>Total Pieces</th>
             </tr>
         </thead>
         <tbody>
-            {% for machine in machines %}
+            {% for machine in page_obj %}
             <tr>
                 <td>{{ machine.cnc_machine_id }}</td>
-                <td><a href="{% url 'job_detail' job_id=machine.job.job_id %}">{{ machine.job.job_name }}</a></td>
+                <td>
+                    <a href="{% url 'job_detail' job_id=machine.job.job_id %}">
+                        {{ machine.job.job_name }}
+                    </a>
+                </td>
                 <td>{{ machine.sheets }}</td>
-                <td>{{ machine.machine_stage }}</td>
+                <td>
+                    <form class="filter-form" data-machine-id="{{ machine.cnc_machine_id }}">
+                        <select name="machine_stage">
+                            <option value="Waiting" {% if machine.machine_stage == 'Waiting' %}selected{% endif %}>Waiting</option>
+                            <option value="In Progress" {% if machine.machine_stage == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="On Hold" {% if machine.machine_stage == 'On Hold' %}selected{% endif %}>On Hold</option>
+                            <option value="Machined" {% if machine.machine_stage == 'Machined' %}selected{% endif %}>Machined</option>
+                        </select>
+                    </form>
+                    
+                </td>
                 <td>{{ machine.date_complete }}</td>
-                <td>{{ machine.notes }}</td>
+                <td>
+                    <div class="notes-container">
+                        <form method="post" action="{% url 'update_job_notes' %}">
+                            {% csrf_token %}
+                            <textarea name="job_notes" class="autoresize" placeholder="Add notes here">{{ machine.job.notes|default_if_none:"" }}</textarea>
+                            <input type="submit" value="Save" class="save-btn">
+                            <input type="hidden" name="job_id" value="{{ machine.job.job_id }}">
+                        </form>
+                    </div>
+                </td>
+                <td>           
+                    <div class="notes-container">
+                        <form method="post" action="{% url 'update_machine_notes' %}">
+                            {% csrf_token %}
+                            <textarea name="machine_notes" class="autoresize" placeholder="Add notes here">{{ machine.notes|default_if_none:"" }}</textarea>
+                            <input type="submit" value="Save" class="save-btn">
+                            <input type="hidden" name="cnc_machine_id" value="{{ machine.cnc_machine_id }}">
+                        </form>
+                    </div>
+                </td>
                 <td>{{ machine.total_pieces }}</td>
             </tr>
             {% endfor %}
@@ -38,4 +92,68 @@
     <p>No machines assigned.</p>
     {% endif %}
 </div>
+
+<div class="pagination-container">
+    {% if page_obj.has_next %}
+        <form method="get" action=".">
+            <input type="hidden" name="num_machines" value="{{ num_machines|add:10 }}">
+            <input type="hidden" name="machined_status" value="{{ machined_status }}">
+            <button type="submit" id="show-more">Show More</button>
+        </form>
+    {% endif %}
+</div>
+
+
+
+<script>
+    // Script for Show More button and maintaining scroll position
+    document.getElementById('show-more').addEventListener('click', function() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('scrollPosition') !== null) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition');
+        }
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.filter-form select[name="machine_stage"]').forEach(function(select) {
+            select.addEventListener('change', function() {
+                const form = this.closest('form');
+                const machineId = form.getAttribute('data-machine-id');
+                const selectedStage = this.value;
+
+                console.log("Submitting AJAX request for machine " + machineId + " with stage " + selectedStage); // Debugging
+
+                fetch(`/management/update-machine-stage/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'cnc_machine_id': machineId, 'machine_stage': selectedStage })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data); // Debugging
+                })
+                .catch(error => {
+                    console.error("Error:", error); // Debugging
+                });
+            });
+        });
+    });
+
+
+
+
+
+
+</script>
 {% endblock %}
+
+
+

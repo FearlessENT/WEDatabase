@@ -632,23 +632,45 @@ def is_machinist(user):
 from django.shortcuts import render
 from .models import CNCMachine
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.paginator import Paginator
 
 @login_required
 @user_passes_test(is_machinist)
 def cnc_operator_jobs(request):
-    machines = []
+    machine_name = None
+    machined_status = request.GET.get('machined_status', 'all')  # New filter parameter
+
+    try:
+        num_machines = int(request.GET.get('num_machines', 10))
+    except ValueError:
+        num_machines = 10
+
     if hasattr(request.user, 'profile') and request.user.profile.assigned_cnc_machine:
         machine_id = request.user.profile.assigned_cnc_machine.machine_id
-        machines = CNCMachine.objects.filter(machine__machine_id=machine_id)  # Fetch CNCMachine records
-    return render(request, 'machining/cnc_operator_jobs.html', {'machines': machines})
+        machines_query = CNCMachine.objects.filter(machine__machine_id=machine_id)
 
+        # Filter based on machined status
+        if machined_status == 'machined':
+            machines_query = machines_query.filter(machine_stage='Machined')  # Adjust the filter criteria as needed
+        elif machined_status == 'not_machined':
+            machines_query = machines_query.exclude(machine_stage='Machined')  # Adjust the filter criteria as needed
 
+        if machines_query.exists():
+            machine_name = machines_query.first().machine.machine_name
 
+        paginator = Paginator(machines_query, num_machines)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
 
+    else:
+        page_obj = None
 
-
-
-
+    return render(request, 'machining/cnc_operator_jobs.html', {
+        'page_obj': page_obj,
+        'machine_name': machine_name,
+        'num_machines': num_machines,
+        'machined_status': machined_status  # Pass this to the template
+    })
 
 
 
@@ -666,6 +688,84 @@ class CustomLoginView(LoginView):
             return '/cnc_operator_jobs'
         else:
             return '/default-page'
+
+
+
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect
+from .models import CNCMachine
+
+@login_required
+def update_machine_notes(request):
+    if request.method == 'POST':
+        cnc_machine_id = request.POST.get('cnc_machine_id')
+        machine_notes = request.POST.get('machine_notes')
+
+        machine = get_object_or_404(CNCMachine, cnc_machine_id=cnc_machine_id)
+        machine.notes = machine_notes
+        machine.save()
+
+        # Redirect back to the referring page
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            # Fallback redirect if referer URL is not available
+            return redirect('cnc_operator_jobs')  # Replace with your default redirect URL
+
+    # Handle non-POST requests here
+    # ...
+
+    # Optional: Redirect or show an error for non-POST requests
+    return redirect('cnc_operator_jobs')
+
+
+
+
+
+
+
+
+
+
+
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from .models import CNCMachine
+import logging
+
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def update_machine_stage(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        machine_id = data.get('cnc_machine_id')
+        machine_stage = data.get('machine_stage')
+
+        logger.debug(f"Updating machine {machine_id} to stage {machine_stage}")  # Debugging
+
+        machine = get_object_or_404(CNCMachine, cnc_machine_id=machine_id)
+        machine.machine_stage = machine_stage
+
+        if machine_stage == 'Machined':
+            machine.date_complete = timezone.now()
+
+        machine.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
 
 
 

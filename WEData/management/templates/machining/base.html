@@ -43,5 +43,22 @@
     });
 });
 
+
+// Script for autoresizing textareas
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.autoresize').forEach(function(textarea) {
+        function resizeTextarea() {
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+        textarea.addEventListener('input', resizeTextarea, false);
+        resizeTextarea(); // Initialize size
+    });
+});
+
+
+
+
 </script>
+
 </html>
