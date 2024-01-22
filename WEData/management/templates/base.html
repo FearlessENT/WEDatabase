@@ -12,30 +12,23 @@
     <div class="header">
         <h1>Wellbrook Education Data Systems</h1>
     </div>
-    <div class="nav">
-        <a href="{% url 'order_list' %}">Orders</a>
-        <a href="{% url 'job_list' %}">Jobs</a>
-        <a href="{% url 'create_job' %}">Create Job</a>
-        <a>Workshop Overview</a>
-        <!-- Add more navigation links here -->
-    </div>
 
 
 
     <div class="nav">
-        {% if is_admin %}
-            <a href="{% url 'order_list' %}">Orders</a>
-            <a href="{% url 'job_list' %}">Jobs</a>
-            <a href="{% url 'create_job' %}">Create Job</a>
-            <!-- More admin-specific links -->
+
+        {% if is_machinist %}
+            <a href="{% url 'cnc_operator_jobs' %}">Machining Page</a>
+            <!-- More machinist-specific links -->
         {% endif %}
 
 
 
-        <!-- Links for Machinists -->
-        {% if is_machinist %}
-            <a href="{% url '/machining/cnc_operator_jobs' %}">Machining Page</a>
-            <!-- More machinist-specific links -->
+        {% if is_reception %}
+            <a href="{% url 'order_list' %}">Orders</a>
+            <a href="{% url 'job_list' %}">Jobs</a>
+            <a href="{% url 'create_job' %}">Create Job</a>
+            <!-- <a href="{% url 'cnc_operator_jobs' %}">Machining Page</a> -->
         {% endif %}
 
     </div>

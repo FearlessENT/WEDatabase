@@ -35,6 +35,7 @@ urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
     path('update_machine_notes/', update_machine_notes, name='update_machine_notes'),
     path('update-machine-stage/', update_machine_stage, name='update_machine_stage'),
+    path('machining/cnc_operator_jobs/', views.cnc_operator_jobs, name='cnc_operator_jobs'),
     
 
  

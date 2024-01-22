@@ -4,7 +4,7 @@ from .models import Order
 from django.db.models import Q
 
 from django.db.models import Q
-
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 
 from django.core.paginator import Paginator
@@ -15,6 +15,38 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from .models import Order
 from django.http import HttpResponse
+
+
+
+
+
+
+
+
+
+from django.contrib.auth.decorators import user_passes_test
+def is_admin(user):
+    return user.groups.filter(name='Admin').exists()
+
+
+def is_machinist(user):
+    if user.groups.filter(name='Machinist').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+
+
+def is_reception(user):
+    if user.groups.filter(name='Reception').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+
+
 
 
 
@@ -49,7 +81,8 @@ def clean_value(value):
 
 
 
-
+@login_required
+@user_passes_test(is_reception)
 def order_list(request):
     # Existing search queries
     customer_query = request.GET.get('customer_search', '')
@@ -113,6 +146,8 @@ from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator
 from .models import Customer, Order
 
+@login_required
+@user_passes_test(is_reception)
 def customer_orders(request, customer_id):
     customer = get_object_or_404(Customer, customer_id=customer_id)
 
@@ -178,6 +213,8 @@ def customer_orders(request, customer_id):
 from django.shortcuts import render, get_object_or_404
 from .models import Order, Part, Job
 
+@login_required
+@user_passes_test(is_reception)
 def order_detail(request, sage_order_number):
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
     parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code', 'job')
@@ -200,6 +237,8 @@ from django.http import JsonResponse
 from .models import Order, Customer
 from django.db.models import Q
 
+@login_required
+@user_passes_test(is_reception)
 def api_orders(request):
     status_filter = request.GET.get('status', 'all')
     orders_query = Order.objects.select_related('customer')
@@ -235,6 +274,8 @@ def api_orders(request):
 from django.shortcuts import render, get_object_or_404
 from .models import Job, Part, Order, PickingProcess, CNCMachine, Workshop
 
+@login_required
+@user_passes_test(is_reception)
 def job_detail(request, job_id):
     # Ensure that job_id is correctly used to query the Job model
     job = get_object_or_404(Job, job_id=job_id)
@@ -292,7 +333,8 @@ def job_detail(request, job_id):
 
 from django.shortcuts import redirect
 
-
+@login_required
+@user_passes_test(is_reception)
 def update_order_notes(request):
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
@@ -333,6 +375,8 @@ def update_order_notes(request):
 from django.shortcuts import render
 from .models import Order, Part, OrdertoJobBridge
 
+@login_required
+@user_passes_test(is_reception)
 def job_search_results(request):
     job_query = request.GET.get('job_search', '')
 
@@ -353,6 +397,8 @@ from .models import Job, Part, CNCMachineDescription
 from django.core.paginator import Paginator
 from django.db.models import Max
 
+@login_required
+@user_passes_test(is_reception)
 def job_list(request):
     job_query = request.GET.get('job_search', '')
 
@@ -394,6 +440,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from .models import Job
 
+@login_required
+@user_passes_test(is_reception)
 def update_job_notes(request):
     if request.method == 'POST':
         job_id = request.POST.get('job_id')
@@ -422,6 +470,8 @@ from django.shortcuts import render, redirect
 from .forms import CreateJobForm
 from .models import Job, Part
 
+@login_required
+@user_passes_test(is_reception)
 def create_job(request):
     if request.method == 'POST':
         form = CreateJobForm(request.POST)
@@ -470,6 +520,8 @@ import json
 
 @csrf_exempt
 @require_POST
+@login_required
+@user_passes_test(is_reception)
 def add_part_to_job(request):
     try:
         data = json.loads(request.body)
@@ -492,6 +544,8 @@ def add_part_to_job(request):
 
 @csrf_exempt
 @require_POST
+@login_required
+@user_passes_test(is_reception)
 def remove_part_from_job(request):
     try:
         data = json.loads(request.body)
@@ -523,6 +577,8 @@ import json
 
 @csrf_exempt
 @require_POST
+@login_required
+@user_passes_test(is_reception)
 def update_job_machine(request):
     try:
         data = json.loads(request.body)
@@ -546,6 +602,8 @@ def update_job_machine(request):
 from django.shortcuts import get_object_or_404, redirect
 from .models import Job, CNCMachineDescription
 
+@login_required
+@user_passes_test(is_reception)
 def update_job_machine(request, job_id):
     if request.method == 'POST':
         job = get_object_or_404(Job, pk=job_id)
@@ -609,16 +667,6 @@ def search_parts_ajax(request):
 
 
 
-
-
-
-
-
-
-
-from django.contrib.auth.decorators import user_passes_test
-def is_machinist(user):
-    return user.groups.filter(name='machinist').exists()
 
 
 
