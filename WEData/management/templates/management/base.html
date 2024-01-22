@@ -19,6 +19,31 @@
         <a>Workshop Overview</a>
         <!-- Add more navigation links here -->
     </div>
+
+
+
+    <div class="nav">
+        {% if is_admin %}
+            <a href="{% url 'order_list' %}">Orders</a>
+            <a href="{% url 'job_list' %}">Jobs</a>
+            <a href="{% url 'create_job' %}">Create Job</a>
+            <!-- More admin-specific links -->
+        {% endif %}
+
+
+
+        <!-- Links for Machinists -->
+        {% if is_machinist %}
+            <a href="{% url 'cnc_operator_jobs' %}">Machining Page</a>
+            <!-- More machinist-specific links -->
+        {% endif %}
+
+    </div>
+
+
+
+
+
     <div class="container">
         {% block content %}
         <!-- Content will go here -->
