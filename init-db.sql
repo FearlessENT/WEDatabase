@@ -32,10 +32,15 @@ CREATE TABLE PartDescription (
 -- Create the Job table
 CREATE TABLE Job (
     JOBID INT AUTO_INCREMENT PRIMARY KEY,
-    JobName VARCHAR(255) UNIQUE
+    JobName VARCHAR(255) UNIQUE,
     CNCMachineID VARCHAR(255),
+    mm8_notes TEXT,
+    mm8_quantity TEXT,
+    mm18_notes TEXT,
+    mm18_quantity TEXT,
     FOREIGN KEY (CNCMachineID) REFERENCES CNCMachineDescription(MachineID)
 );
+
 
 -- Modify the Part table to include a foreign key to Job
 CREATE TABLE Part (

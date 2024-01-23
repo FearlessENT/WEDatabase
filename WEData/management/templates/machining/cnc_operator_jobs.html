@@ -34,11 +34,15 @@
                 <th>ID</th>
                 <th>Job Name</th>
                 <th>Sheets</th>
+                <th>8mm</th>
+                <th>Quantity</th>
+                <th>18mm</th>
+                <th>Quantity</th>
                 <th>Machine Stage</th>
-                <th>Date Complete</th>
                 <th>Job Notes</th>
                 <th>Machine Notes</th>
                 <th>Total Pieces</th>
+                
             </tr>
         </thead>
         <tbody>
@@ -50,7 +54,12 @@
                         {{ machine.job.job_name }}
                     </a>
                 </td>
+
                 <td>{{ machine.sheets }}</td>
+                <td>{{ machine.job.mm8_notes }}</td>
+                <td>{{ machine.job.mm8_quantity }}</td>
+                <td>{{ machine.job.mm18_notes }}</td>
+                <td>{{ machine.job.mm18_quantity }}</td>
                 <td>
                     <form class="filter-form" data-machine-id="{{ machine.cnc_machine_id }}">
                         <select name="machine_stage">
@@ -62,16 +71,8 @@
                     </form>
                     
                 </td>
-                <td>{{ machine.date_complete }}</td>
                 <td>
-                    <div class="notes-container">
-                        <form method="post" action="{% url 'update_job_notes' %}">
-                            {% csrf_token %}
-                            <textarea name="job_notes" class="autoresize" placeholder="Add notes here">{{ machine.job.notes|default_if_none:"" }}</textarea>
-                            <input type="submit" value="Save" class="save-btn">
-                            <input type="hidden" name="job_id" value="{{ machine.job.job_id }}">
-                        </form>
-                    </div>
+                    {{ machine.job.job_notes }}    
                 </td>
                 <td>           
                     <div class="notes-container">

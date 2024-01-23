@@ -419,3 +419,31 @@ textarea.autoresize {
     color: red;
     margin-top: 1rem;
 }
+
+
+
+
+
+
+
+.flex-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px; /* Adjust as needed */
+}
+
+.flex-item {
+    flex: 1;
+    padding-right: 10px; /* Adjust spacing between items */
+}
+
+
+
+
+
+
+.padded-section {
+    padding-top: 20px; /* Adjust the padding value as needed */
+    padding-bottom: 20px; /* Adjust the padding value as needed */
+}

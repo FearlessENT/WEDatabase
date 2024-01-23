@@ -274,23 +274,30 @@ def api_orders(request):
 from django.shortcuts import render, get_object_or_404
 from .models import Job, Part, Order, PickingProcess, CNCMachine, Workshop
 
+
 @login_required
 @user_passes_test(is_reception)
 def job_detail(request, job_id):
-    # Ensure that job_id is correctly used to query the Job model
     job = get_object_or_404(Job, job_id=job_id)
+    cnc_machines = CNCMachineDescription.objects.all()
 
-
-    # Handle POST request for changing the CNC machine
     if request.method == 'POST':
-        machine_id = request.POST.get('cnc_machine_id')
-        if machine_id:
-            job.CNCMachine_id = machine_id  # Update the machine ID
+        if 'cnc_machine_id' in request.POST:
+            machine_id = request.POST.get('cnc_machine_id')
+            if machine_id:
+                job.CNCMachine_id = machine_id  # Update the machine ID
+            else:
+                job.CNCMachine = None  # Remove the machine assignment
         else:
-            job.CNCMachine = None  # Remove the machine assignment
-        job.save()
-        return redirect('job_detail', job_id=job_id)  # Redirect back to the same job detail page
+            # Update job notes and additional fields
+            job.job_notes = request.POST.get('job_notes')
+            job.mm8_notes = request.POST.get('mm8_notes')
+            job.mm8_quantity = request.POST.get('mm8_quantity')
+            job.mm18_notes = request.POST.get('mm18_notes')
+            job.mm18_quantity = request.POST.get('mm18_quantity')
 
+        job.save()
+        return redirect('job_detail', job_id=job.job_id)
 
     # Fetch parts linked to the job
     parts = Part.objects.filter(job=job)
@@ -307,11 +314,8 @@ def job_detail(request, job_id):
     cnc_status = CNCMachine.objects.filter(job=job).first()
     machining_status = cnc_status.machine_stage if cnc_status else 'Not Available'
 
-    cnc_machines = CNCMachineDescription.objects.all()
-
     # Fetch workshop info linked to the job
     workshop_infos = Workshop.objects.filter(sage_order_number__part__job_id=job_id).distinct()
-
 
     return render(request, 'management/job_detail.html', {
         'job': job,
@@ -323,9 +327,6 @@ def job_detail(request, job_id):
         'workshop_infos': workshop_infos,
         'cnc_machines': cnc_machines
     })
-
-
-
 
 
 

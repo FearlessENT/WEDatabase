@@ -76,6 +76,12 @@ class Job(models.Model):
     job_id = models.AutoField(primary_key=True, db_column='JOBID')
     job_name = models.CharField(max_length=255, unique=True, db_column='JobName')
     job_notes = models.TextField(db_column = 'JobNotes')
+
+    mm8_notes = models.TextField(db_column='mm8_notes', blank=True, null=True)
+    mm8_quantity = models.TextField(db_column='mm8_quantity', blank=True, null=True)
+    mm18_notes = models.TextField(db_column='mm18_notes', blank=True, null=True)
+    mm18_quantity = models.TextField(db_column='mm18_quantity', blank=True, null=True)
+
     CNCMachine = models.ForeignKey(
         CNCMachineDescription,
         on_delete=models.SET_NULL,
