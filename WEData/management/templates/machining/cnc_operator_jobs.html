@@ -60,7 +60,16 @@
                 <td>{{ machine.sheets }}</td>
                 <td>{{ machine.job.mm8_notes }}</td>
                 <td>{{ machine.job.mm8_quantity }}</td>
-                <td></td>
+                <td>
+                    <form class="filter-form-mm8" data-machine-id="{{ machine.cnc_machine_id }}">
+                        <select name="mm8_machine_stage">
+                            <option value="Waiting" {% if machine.job.mm8_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                            <option value="In Progress" {% if machine.job.mm8_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="On Hold" {% if machine.job.mm8_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                            <option value="Machined" {% if machine.job.mm8_status == 'Machined' %}selected{% endif %}>Machined</option>
+                        </select>
+                    </form>
+                </td>
                 <td>{{ machine.job.mm18_notes }}</td>
                 <td>{{ machine.job.mm18_quantity }}</td>
                 <td></td>
@@ -153,7 +162,36 @@
     });
 
 
+    
+    
+    document.addEventListener('DOMContentLoaded', function() {
+    // mm8 dropdown
+        document.querySelectorAll('.filter-form-mm8 select[name="mm8_machine_stage"]').forEach(function(select) {
+            select.addEventListener('change', function() {
+                const form = this.closest('form');
+                const jobId = form.getAttribute('data-job-id');
+                const selectedStage = this.value;
 
+                console.log("Submitting AJAX request for job " + jobId + " with mm8 stage " + selectedStage);
+
+                fetch(`/management/update-job-mm8-stage/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'job_id': jobId, 'mm8_machine_stage': selectedStage })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data);
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+            });
+        });
+    });
 
 
 

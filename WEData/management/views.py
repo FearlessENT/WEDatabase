@@ -818,6 +818,25 @@ def update_machine_stage(request):
 
 
 
+@csrf_exempt
+def update_job_mm8_stage(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        mm8_stage = data.get('mm8_machine_stage')
+
+
+        job = get_object_or_404(Job, job_id=job_id)
+        job.mm8_stage = mm8_stage  # Update the mm8 stage of the job
+
+        job.save()
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
 
 
 

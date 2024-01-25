@@ -13,6 +13,7 @@ from .views import CustomLoginView
 from .views import update_machine_notes
 from django.contrib.auth import views as auth_views
 from .views import update_machine_stage
+from .views import update_job_mm8_stage
 
 urlpatterns = [
     path('orders/', views.order_list, name='order_list'),
@@ -36,6 +37,7 @@ urlpatterns = [
     path('update_machine_notes/', update_machine_notes, name='update_machine_notes'),
     path('update-machine-stage/', update_machine_stage, name='update_machine_stage'),
     path('machining/cnc_operator_jobs/', views.cnc_operator_jobs, name='cnc_operator_jobs'),
+    path('update-job-mm8-stage/', update_job_mm8_stage, name='update_job_mm8_stage'),
     
 
  

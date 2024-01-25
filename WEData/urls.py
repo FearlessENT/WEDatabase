@@ -28,4 +28,5 @@ urlpatterns = [
     path('management/', include(('WEData.management.urls', 'management'), namespace='management')),
     
     
+    
 ]
