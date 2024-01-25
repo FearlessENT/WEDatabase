@@ -825,15 +825,12 @@ def update_job_mm8_stage(request):
         job_id = data.get('job_id')
         mm8_stage = data.get('mm8_machine_stage')
 
-
         job = get_object_or_404(Job, job_id=job_id)
-        job.mm8_stage = mm8_stage  # Update the mm8 stage of the job
-
+        job.mm8_status = mm8_stage  # Ensure this is the correct field name in your Job model
         job.save()
+
         return JsonResponse({'status': 'success'})
-
     return JsonResponse({'status': 'error'}, status=400)
-
 
 
 

@@ -61,7 +61,7 @@
                 <td>{{ machine.job.mm8_notes }}</td>
                 <td>{{ machine.job.mm8_quantity }}</td>
                 <td>
-                    <form class="filter-form-mm8" data-machine-id="{{ machine.cnc_machine_id }}">
+                    <form class="filter-form-mm8" data-job-id="{{ machine.job.job_id }}">
                         <select name="mm8_machine_stage">
                             <option value="Waiting" {% if machine.job.mm8_status == 'Waiting' %}selected{% endif %}>Waiting</option>
                             <option value="In Progress" {% if machine.job.mm8_status == 'In Progress' %}selected{% endif %}>In Progress</option>
@@ -171,6 +171,9 @@
                 const form = this.closest('form');
                 const jobId = form.getAttribute('data-job-id');
                 const selectedStage = this.value;
+
+
+                console.log("Job ID:", jobId);
 
                 console.log("Submitting AJAX request for job " + jobId + " with mm8 stage " + selectedStage);
 
