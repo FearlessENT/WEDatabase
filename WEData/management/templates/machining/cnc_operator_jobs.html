@@ -36,8 +36,10 @@
                 <th>Sheets</th>
                 <th>8mm</th>
                 <th>Quantity</th>
+                <th>Machine Stage</th>
                 <th>18mm</th>
                 <th>Quantity</th>
+                <th>Machine Stage</th>
                 <th>Machine Stage</th>
                 <th>Job Notes</th>
                 <th>Machine Notes</th>
@@ -58,8 +60,10 @@
                 <td>{{ machine.sheets }}</td>
                 <td>{{ machine.job.mm8_notes }}</td>
                 <td>{{ machine.job.mm8_quantity }}</td>
+                <td></td>
                 <td>{{ machine.job.mm18_notes }}</td>
                 <td>{{ machine.job.mm18_quantity }}</td>
+                <td></td>
                 <td>
                     <form class="filter-form" data-machine-id="{{ machine.cnc_machine_id }}">
                         <select name="machine_stage">

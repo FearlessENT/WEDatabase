@@ -36,11 +36,12 @@ CREATE TABLE Job (
     CNCMachineID VARCHAR(255),
     mm8_notes TEXT,
     mm8_quantity TEXT,
+    mm8_status TEXT,  -- New mm8_status column
     mm18_notes TEXT,
     mm18_quantity TEXT,
+    mm18_status TEXT,  -- New mm18_status column
     FOREIGN KEY (CNCMachineID) REFERENCES CNCMachineDescription(MachineID)
 );
-
 
 -- Modify the Part table to include a foreign key to Job
 CREATE TABLE Part (

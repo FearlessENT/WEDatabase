@@ -90,6 +90,10 @@ class Job(models.Model):
         db_column='CNCMachineID' 
     )
 
+    mm8_status = models.TextField(db_column='mm8_status', blank=True, null=True)
+    mm18_status = models.TextField(db_column='mm18_status', blank=True, null=True)
+
+
     class Meta:
         db_table = 'job'
 
