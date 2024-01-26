@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Picking Department</h2>
+
+<div class="filter-container">
+    <form method="get" action="{% url 'picking_department' %}" class = 'filter-form'>
+        <select name="picking_status" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="Picked" {% if current_filter == 'Picked' %}selected{% endif %}>Picked</option>
+            <option value="On Hold" {% if current_filter == 'On Hold' %}selected{% endif %}>On Hold</option>
+            <option value="Waiting" {% if current_filter == 'Waiting' %}selected{% endif %}>Waiting</option>
+        </select>
+    </form>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Job Name</th>
+            <th>Parts</th>
+            <th>Machining Status</th>
+            <th>Picking Status</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for job in page_obj %}
+        <tr>
+            <td>{{ job.job_name }}</td>
+            <td>
+                {% for part in job.part_set.all %}
+                    {{ part.product_code }}<br>
+                {% endfor %}
+            </td>
+            <td>
+                {% if job.cncmachine %}
+                    {{ job.cncmachine.machine_stage }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>
+                <div class="filter-form">
+                    {% for picking in job.pickingprocess_set.all %}
+                    <select name="picking_status" data-job-id="{{ job.job_id }}" onchange="updatePickingStatus(this)">
+                        <option value="Picked" {% if job.pickingprocess_set.first.picking_status == 'Picked' %}selected{% endif %}>Picked</option>
+                        <option value="On Hold" {% if job.pickingprocess_set.first.picking_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                        <option value="Waiting" {% if job.pickingprocess_set.first.picking_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                    </select>
+                    {% endfor %}
+                </div>
+            </td>
+            <td>
+                <div class="notes-container">
+                    <form class="picking-notes-form" data-job-id="{{ job.job_id }}">
+                        <textarea name="picking_notes" class="autoresize" placeholder="Add notes here">{{ job.pickingprocess_set.first.notes|default_if_none:"" }}</textarea>
+                        <button type="button" onclick="savePickingNotes(this)" class="save-btn">Save</button>
+                    </form>
+                </div>
+            </td>
+            
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="?show_more=True&num_jobs={{ page_obj.paginator.per_page }}" id="show-more">Show More</a>
+
+
+<script>
+    // Script to store the scroll position
+    document.getElementById('show-more').addEventListener('click', function() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    });
+
+    // Script to restore the scroll position
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('scrollPosition') !== null) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition'); // Clear the stored position
+        }
+    });
+
+
+    function savePickingNotes(buttonElement) {
+        const form = buttonElement.closest('.picking-notes-form');
+        const jobId = form.getAttribute('data-job-id');
+        const notes = form.querySelector('textarea[name="picking_notes"]').value;
+
+        fetch('/management/update_picking_notes/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 'job_id': jobId, 'notes': notes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Response received:", data);
+            // Optional: Update UI or display a success message
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            // Optional: Display an error message
+        });
+    }
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim().split('=');
+            if (cookie[0] === 'csrftoken') {
+                return cookie[1];
+            }
+        }
+        return '';
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function updatePickingStatus(element) {
+        const jobId = element.getAttribute('data-job-id');
+        const newStatus = element.value;
+
+        fetch('/management/update_picking_status/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 'job_id': jobId, 'picking_status': newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Response received:", data);
+            // Optional: Display a success message or update the UI
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            // Optional: Display an error message
+        });
+    }
+
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim().split('=');
+            if (cookie[0] === 'csrftoken') {
+                return cookie[1];
+            }
+        }
+        return '';
+    }
+
+
+
+
+
+
+
+
+
+</script>
+
+{% endblock %}

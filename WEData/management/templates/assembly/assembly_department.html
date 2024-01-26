@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Assembly Department</h2>
+
+<form method="get" action=".">
+    <select name="workshop" onchange="this.form.submit()">
+        <option value="">All Workshops</option>
+        {% for type in workshop_types %}
+            <option value="{{ type.workshop_id }}" {% if current_filter|stringformat:"s" == type.workshop_id|stringformat:"s" %}selected{% endif %}>
+                {{ type.workshop_name }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+
+
+
+
+<table>
+    <thead>
+        <tr>
+            <th>Workshop Name</th>
+            <th>Order Number</th>
+            <th>Product Code</th>
+            <th>Assembly Status</th>
+            <th>Notes</th>
+            <th>Picking Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for process in page_obj %}
+        <tr>
+            <td>{{ process.workshop_id.workshop_name }}</td>
+            <td>{{ process.sage_order_number.sage_order_number }}</td>
+            <td>{{ process.product_code.product_code }}</td>
+            <td>
+                <!-- Dropdown for assembly status -->
+            </td>
+            <td>
+                <!-- Textarea for notes -->
+            </td>
+            <td>
+                <!-- Visual indicator for picking status -->
+                {% if process.picking_status_indicator %}
+                    <span class="green-indicator">All Picked</span>
+                {% else %}
+                    <span class="red-indicator">Pending</span>
+                {% endif %}
+            </td>
+            <td>
+                <!-- Save button -->
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+<div class="pagination-container">
+    {% if page_obj.has_next %}
+        <form method="get" action=".">
+            <input type="hidden" name="num_processes" value="{{ page_obj.paginator.per_page|add:10 }}">
+            <!-- Include any other parameters you need to maintain -->
+            <button type="submit" id="show-more">Show More</button>
+        </form>
+    {% endif %}
+</div>
+
+
+<script>
+
+
+
+
+
+
+
+
+
+    // Script for Show More button and maintaining scroll position
+    document.getElementById('show-more').addEventListener('click', function() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('scrollPosition') !== null) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition');
+        }
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function saveAssemblyNotes(buttonElement) {
+        const form = buttonElement.closest('.assembly-notes-form');
+        const jobId = form.getAttribute('data-job-id');
+        const notes = form.querySelector('textarea[name="assembly_notes"]').value;
+    
+        fetch('/path/to/update_assembly_notes/', { // Replace with your actual URL endpoint
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 'job_id': jobId, 'notes': notes })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Notes updated successfully:", data);
+            // Optional: Add any UI updates here
+        })
+        .catch(error => {
+            console.error("Failed to update notes:", error);
+            // Optional: Handle error in UI
+        });
+    }
+    
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            let [key, value] = cookie.trim().split('=');
+            if (key === 'csrftoken') {
+                return value;
+            }
+        }
+        return '';
+    }
+</script>
+    
+
+
+
+
+
+
+
+
+
+{% endblock %}

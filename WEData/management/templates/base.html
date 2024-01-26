@@ -18,9 +18,34 @@
     <div class="nav">
 
         {% if is_machinist %}
-            <a href="{% url 'cnc_operator_jobs' %}">Machining Page</a>
+            <a href="{% url 'cnc_operator_jobs' %}">Machining</a>
             <!-- More machinist-specific links -->
         {% endif %}
+
+
+
+
+
+        
+        {% if is_picking %}
+            <a href="{% url 'picking_department' %}">Picking</a>
+            <!-- More picking-specific links -->
+        {% endif %}
+
+
+
+        
+        {% if is_assembly %}
+            <a href="{% url 'assembly_department' %}">Assembly</a>
+            <!-- More assembly-specific links -->
+        {% endif %}
+
+
+
+
+
+
+
 
 
 
@@ -30,6 +55,14 @@
             <a href="{% url 'create_job' %}">Create Job</a>
             <!-- <a href="{% url 'cnc_operator_jobs' %}">Machining Page</a> -->
         {% endif %}
+
+
+
+
+
+
+
+
 
     </div>
 

@@ -49,6 +49,16 @@ def is_reception(user):
 
 
 
+def is_picking(user):
+    if user.groups.filter(name='Picking').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+
+
+
 
 
 
@@ -826,7 +836,7 @@ def update_job_mm8_stage(request):
         mm8_stage = data.get('mm8_machine_stage')
 
         job = get_object_or_404(Job, job_id=job_id)
-        job.mm8_status = mm8_stage  # Ensure this is the correct field name in your Job model
+        job.mm8_status = mm8_stage  
         job.save()
 
         return JsonResponse({'status': 'success'})
@@ -837,3 +847,209 @@ def update_job_mm8_stage(request):
 
 
 
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def update_job_mm18_stage(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        mm18_stage = data.get('mm18_machine_stage')
+
+        job = get_object_or_404(Job, job_id=job_id)
+        job.mm18_status = mm18_stage 
+        job.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
+
+
+
+
+
+from django.shortcuts import render
+from .models import PickingProcess
+
+from .models import Job, Part
+
+from django.core.paginator import Paginator
+from django.db.models import Prefetch
+
+def picking_department(request):
+    # Assuming CNCMachine has a field 'date_complete' and is related to Job
+    jobs_with_picking = Job.objects.prefetch_related(
+        Prefetch(
+            'cncmachine_set',
+            queryset=CNCMachine.objects.order_by('date_complete')
+        ),
+        'part_set'
+    ).all()
+
+    picking_status_filter = request.GET.get('picking_status', None)
+    
+    # Apply sorting by the date_complete of the related CNCMachine
+    jobs_with_picking = jobs_with_picking.order_by('cncmachine__date_complete')
+
+        # Apply filter if picking_status_filter is provided
+    if picking_status_filter in ['Picked', 'On Hold', 'Waiting']:
+        jobs_with_picking = jobs_with_picking.filter(
+            pickingprocess__picking_status=picking_status_filter
+        )
+
+
+    # Pagination setup
+    num_jobs = int(request.GET.get('num_jobs', 20))  # Default to 20 jobs per page
+    show_more = request.GET.get('show_more', False)
+    if show_more:
+        num_jobs += 20
+
+    paginator = Paginator(jobs_with_picking, num_jobs)
+    page_obj = paginator.get_page(1)
+
+    context = {'page_obj': page_obj, 'current_filter': picking_status_filter}
+    return render(request, 'picking/picking_department.html', context)
+
+
+
+
+@csrf_exempt
+def update_picking_status(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        new_status = data.get('picking_status')
+
+        # Assuming each job has one picking process
+        picking_process = get_object_or_404(PickingProcess, job_id=job_id)
+        picking_process.picking_status = new_status
+        picking_process.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from .models import PickingProcess
+import json
+
+@csrf_exempt
+def save_picking_notes(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        picking_id = data.get('picking_id')
+        notes = data.get('notes')
+        picking_status = data.get('picking_status')
+
+        picking_process = get_object_or_404(PickingProcess, picking_id=picking_id)
+        picking_process.notes = notes
+        picking_process.picking_status = picking_status
+        picking_process.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
+@csrf_exempt
+def update_picking_notes(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        notes = data.get('notes')
+
+        picking_process = get_object_or_404(PickingProcess, job_id=job_id)
+        picking_process.notes = notes
+        picking_process.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
+
+
+
+
+
+from django.core.paginator import Paginator
+from .models import Workshop, WorkshopTypes, Order, PartDescription
+
+def assembly_department(request):
+    workshop_filter = request.GET.get('workshop', None)
+    workshops = Workshop.objects.all()
+
+    if workshop_filter and workshop_filter.isdigit():
+        workshops = workshops.filter(workshop_id=workshop_filter)
+
+    workshop_types = WorkshopTypes.objects.all()
+
+    # Fetch assembly processes with related data
+    assembly_processes = Workshop.objects.select_related('workshop_id', 'sage_order_number', 'product_code').all()
+
+
+    # Logic to calculate picking status for each part in the order
+    for process in assembly_processes:
+        # Example logic, adjust based on your actual model relations
+        parts = Part.objects.filter(sage_order_number=process.sage_order_number)
+        process.picking_status_indicator = all(part.picking_status == 'Picked' for part in parts)
+
+    # Pagination setup
+    num_processes = int(request.GET.get('num_processes', 20))
+    paginator = Paginator(assembly_processes, num_processes)
+    page_obj = paginator.get_page(1)
+
+    context = {
+        'page_obj': page_obj,
+        'workshop_types': workshop_types,
+        'current_filter': workshop_filter
+    }
+    return render(request, 'assembly/assembly_department.html', context)
+
+
+
+
+
+
+
+
+
+
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+from .models import Workshop
+import json
+
+@csrf_exempt
+def update_assembly_notes(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        notes = data.get('notes')
+
+        workshop = get_object_or_404(Workshop, job_id=job_id)
+        workshop.notes = notes
+        workshop.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)

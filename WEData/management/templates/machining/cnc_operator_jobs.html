@@ -61,18 +61,31 @@
                 <td>{{ machine.job.mm8_notes }}</td>
                 <td>{{ machine.job.mm8_quantity }}</td>
                 <td>
-                    <form class="filter-form-mm8" data-job-id="{{ machine.job.job_id }}">
-                        <select name="mm8_machine_stage">
-                            <option value="Waiting" {% if machine.job.mm8_status == 'Waiting' %}selected{% endif %}>Waiting</option>
-                            <option value="In Progress" {% if machine.job.mm8_status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                            <option value="On Hold" {% if machine.job.mm8_status == 'On Hold' %}selected{% endif %}>On Hold</option>
-                            <option value="Machined" {% if machine.job.mm8_status == 'Machined' %}selected{% endif %}>Machined</option>
-                        </select>
-                    </form>
+                    <div class="filter-form">
+                        <form class="filter-form-mm8" data-job-id="{{ machine.job.job_id }}">
+                            <select name="mm8_machine_stage">
+                                <option value="Waiting" {% if machine.job.mm8_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                                <option value="In Progress" {% if machine.job.mm8_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="On Hold" {% if machine.job.mm8_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                                <option value="Machined" {% if machine.job.mm8_status == 'Machined' %}selected{% endif %}>Machined</option>
+                            </select>
+                        </form>
+                    </div>
                 </td>
                 <td>{{ machine.job.mm18_notes }}</td>
                 <td>{{ machine.job.mm18_quantity }}</td>
-                <td></td>
+                <td>
+                    <div class="filter-form">
+                        <form class="filter-form-mm18" data-job-id="{{ machine.job.job_id }}">
+                            <select name="mm18_machine_stage">
+                                <option value="Waiting" {% if machine.job.mm18_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                                <option value="In Progress" {% if machine.job.mm18_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="On Hold" {% if machine.job.mm18_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                                <option value="Machined" {% if machine.job.mm18_status == 'Machined' %}selected{% endif %}>Machined</option>
+                            </select>
+                        </form>
+                    </div>                    
+                </td>
                 <td>
                     <form class="filter-form" data-machine-id="{{ machine.cnc_machine_id }}">
                         <select name="machine_stage">
@@ -184,6 +197,35 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ 'job_id': jobId, 'mm8_machine_stage': selectedStage })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data);
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+            });
+        });
+    });
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.filter-form-mm18 select[name="mm18_machine_stage"]').forEach(function(select) {
+            select.addEventListener('change', function() {
+                const form = this.closest('form');
+                const jobId = form.getAttribute('data-job-id');
+                const selectedStage = this.value;
+
+                console.log("Submitting AJAX request for job " + jobId + " with mm18 stage " + selectedStage);
+
+                fetch(`/management/update-job-mm18-stage/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'job_id': jobId, 'mm18_machine_stage': selectedStage })
                 })
                 .then(response => response.json())
                 .then(data => {

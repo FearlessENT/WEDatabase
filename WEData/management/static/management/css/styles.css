@@ -447,3 +447,18 @@ textarea.autoresize {
     padding-top: 20px; /* Adjust the padding value as needed */
     padding-bottom: 20px; /* Adjust the padding value as needed */
 }
+
+
+
+
+
+
+
+
+.green-indicator {
+    color: green;
+}
+
+.red-indicator {
+    color: red;
+}

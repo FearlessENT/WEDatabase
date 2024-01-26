@@ -14,6 +14,10 @@ from .views import update_machine_notes
 from django.contrib.auth import views as auth_views
 from .views import update_machine_stage
 from .views import update_job_mm8_stage
+from .views import update_job_mm18_stage
+from .views import picking_department
+from .views import assembly_department
+
 
 urlpatterns = [
     path('orders/', views.order_list, name='order_list'),
@@ -38,6 +42,12 @@ urlpatterns = [
     path('update-machine-stage/', update_machine_stage, name='update_machine_stage'),
     path('machining/cnc_operator_jobs/', views.cnc_operator_jobs, name='cnc_operator_jobs'),
     path('update-job-mm8-stage/', update_job_mm8_stage, name='update_job_mm8_stage'),
+    path('update-job-mm18-stage/', update_job_mm18_stage, name='update-job-mm18-stage'),
+    path('picking/picking_department/', picking_department, name='picking_department'),
+    path('update_picking_status/', views.update_picking_status, name='update_picking_status'),
+    path('update_picking_notes/', views.update_picking_notes, name='update_picking_notes'),
+    path('assembly/assembly_department/', assembly_department, name='assembly_department'),
+    path('update_assembly_notes/', views.update_assembly_notes, name='update_assembly_notes'),
     
 
  
