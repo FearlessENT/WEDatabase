@@ -692,6 +692,13 @@ from django.shortcuts import render
 from .models import CNCMachine
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
+from django.db.models import Sum, Case, When, IntegerField
+from django.db.models import Q
+from django.db.models import Sum, Case, When, IntegerField, Q, Value, CharField
+from django.db.models.functions import Cast, Coalesce
+
+
+from .models import Job, Part
 
 @login_required
 @user_passes_test(is_machinist)
@@ -724,11 +731,43 @@ def cnc_operator_jobs(request):
     else:
         page_obj = None
 
+
+    totals = Job.objects.annotate(
+        converted_mm8_quantity=Case(
+            When(mm8_quantity__iexact='none', then=Value(0)),
+            default=Cast('mm8_quantity', IntegerField()),
+            output_field=IntegerField()
+        ),
+        converted_mm18_quantity=Case(
+            When(mm18_quantity__iexact='none', then=Value(0)),
+            default=Cast('mm18_quantity', IntegerField()),
+            output_field=IntegerField()
+        )
+    ).aggregate(
+        total_mm8_quantity=Sum(
+            Case(
+                When(~Q(mm8_status='Machined'), then='converted_mm8_quantity'),
+                default=0,
+                output_field=IntegerField()
+            )
+        ),
+        total_mm18_quantity=Sum(
+            Case(
+                When(~Q(mm18_status='Machined'), then='converted_mm18_quantity'),
+                default=0,
+                output_field=IntegerField()
+            )
+        )
+    )
+        
+
     return render(request, 'machining/cnc_operator_jobs.html', {
         'page_obj': page_obj,
         'machine_name': machine_name,
         'num_machines': num_machines,
-        'machined_status': machined_status  # Pass this to the template
+        'machined_status': machined_status,  
+        'total_mm8_quantity': totals['total_mm8_quantity'],
+        'total_mm18_quantity': totals['total_mm18_quantity']
     })
 
 
@@ -815,6 +854,11 @@ def update_machine_stage(request):
 
         if machine_stage == 'Machined':
             machine.date_complete = timezone.now()
+            # Update the related job's machined_by field
+            if machine.job:
+                job = get_object_or_404(Job, job_id=machine.job.job_id)
+                job.machined_by = request.user
+                job.save()
 
         machine.save()
 
@@ -994,13 +1038,23 @@ from django.core.paginator import Paginator
 from .models import Workshop, WorkshopTypes, Order, PartDescription
 
 def assembly_department(request):
+
+
+
     workshop_filter = request.GET.get('workshop', None)
-    workshops = Workshop.objects.all()
+    workshops = Workshop.objects.select_related('workshop_id').all()
 
     if workshop_filter and workshop_filter.isdigit():
-        workshops = workshops.filter(workshop_id=workshop_filter)
+        workshops = workshops.filter(workshop_id__workshop_id=int(workshop_filter))
 
     workshop_types = WorkshopTypes.objects.all()
+    num_processes = int(request.GET.get('num_processes', 20))
+
+
+
+
+
+
 
     # Fetch assembly processes with related data
     assembly_processes = Workshop.objects.select_related('workshop_id', 'sage_order_number', 'product_code').all()
@@ -1053,3 +1107,24 @@ def update_assembly_notes(request):
         return JsonResponse({'status': 'success'})
 
     return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.core.paginator import Paginator
+from .models import Workshop, WorkshopTypes, Order, PartDescription
+
+def upholstery_department(request):
+
+
+    return render(request, 'upholstery/upholstery_department.html')
+

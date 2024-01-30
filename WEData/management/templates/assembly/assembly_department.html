@@ -3,11 +3,13 @@
 {% block content %}
 <h2>Assembly Department</h2>
 
+
+
 <form method="get" action=".">
     <select name="workshop" onchange="this.form.submit()">
         <option value="">All Workshops</option>
         {% for type in workshop_types %}
-            <option value="{{ type.workshop_id }}" {% if current_filter|stringformat:"s" == type.workshop_id|stringformat:"s" %}selected{% endif %}>
+            <option value="{{ type.workshop_id }}" {% if current_filter == type.workshop_id %}selected{% endif %}>
                 {{ type.workshop_name }}
             </option>
         {% endfor %}

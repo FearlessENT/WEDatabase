@@ -48,6 +48,7 @@ urlpatterns = [
     path('update_picking_notes/', views.update_picking_notes, name='update_picking_notes'),
     path('assembly/assembly_department/', assembly_department, name='assembly_department'),
     path('update_assembly_notes/', views.update_assembly_notes, name='update_assembly_notes'),
+    path('upholstery/upholstery_department/', views.upholstery_department, name='upholstery_department'),
     
 
  

@@ -163,14 +163,12 @@
     <table>
         <tr>
             <th>Workshop Name</th>
-            <th>Part ID</th>
             <th>Assembly Status</th>
             <!-- Add more headers as needed -->
         </tr>
         {% for workshop in workshop_infos %}
             <tr>
                 <td>{{ workshop.workshop_id.workshop_name }}</td>
-                <td>{{ workshop.part.part_id }}</td> <!-- Update according to your model relationships -->
                 <td class="{% if workshop.assembly_status == 'Built' %}status-green{% elif workshop.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">
                     {{ workshop.assembly_status }}
                 </td>

@@ -33,17 +33,17 @@
             <tr>
                 <th>ID</th>
                 <th>Job Name</th>
-                <th>Sheets</th>
+                <!-- <th>Sheets</th> -->
                 <th>8mm</th>
-                <th>Quantity</th>
+                <td>Quantity ({{ total_mm8_quantity }} Outstanding)</td>
                 <th>Machine Stage</th>
                 <th>18mm</th>
-                <th>Quantity</th>
+                <td>Quantity ({{ total_mm18_quantity }} Outstanding)</td>
                 <th>Machine Stage</th>
-                <th>Machine Stage</th>
+                <!-- <th>Machine Stage</th> -->
                 <th>Job Notes</th>
                 <th>Machine Notes</th>
-                <th>Total Pieces</th>
+                
                 
             </tr>
         </thead>
@@ -57,9 +57,9 @@
                     </a>
                 </td>
 
-                <td>{{ machine.sheets }}</td>
-                <td>{{ machine.job.mm8_notes }}</td>
-                <td>{{ machine.job.mm8_quantity }}</td>
+                <!-- <td>{{ machine.sheets }}</td> -->
+                <td>{{ machine.job.mm8_notes|default_if_none:"" }}</td>
+                <td>{{ machine.job.mm8_quantity|default_if_none:"" }}</td>
                 <td>
                     <div class="filter-form">
                         <form class="filter-form-mm8" data-job-id="{{ machine.job.job_id }}">
@@ -72,8 +72,8 @@
                         </form>
                     </div>
                 </td>
-                <td>{{ machine.job.mm18_notes }}</td>
-                <td>{{ machine.job.mm18_quantity }}</td>
+                <td>{{ machine.job.mm18_notes|default_if_none:"" }}</td>
+                <td>{{ machine.job.mm18_quantity|default_if_none:"" }}</td>
                 <td>
                     <div class="filter-form">
                         <form class="filter-form-mm18" data-job-id="{{ machine.job.job_id }}">
@@ -86,7 +86,7 @@
                         </form>
                     </div>                    
                 </td>
-                <td>
+                <!-- <td>
                     <form class="filter-form" data-machine-id="{{ machine.cnc_machine_id }}">
                         <select name="machine_stage">
                             <option value="Waiting" {% if machine.machine_stage == 'Waiting' %}selected{% endif %}>Waiting</option>
@@ -96,9 +96,9 @@
                         </select>
                     </form>
                     
-                </td>
+                </td> -->
                 <td>
-                    {{ machine.job.job_notes }}    
+                    {{ machine.job.job_notes|default_if_none:"" }}    
                 </td>
                 <td>           
                     <div class="notes-container">
@@ -110,7 +110,7 @@
                         </form>
                     </div>
                 </td>
-                <td>{{ machine.total_pieces }}</td>
+                
             </tr>
             {% endfor %}
         </tbody>

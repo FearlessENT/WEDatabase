@@ -70,7 +70,7 @@ class CNCMachineDescription(models.Model):
 
 
 
-
+from django.conf import settings
 
 class Job(models.Model):
     job_id = models.AutoField(primary_key=True, db_column='JOBID')
@@ -81,6 +81,8 @@ class Job(models.Model):
     mm8_quantity = models.TextField(db_column='mm8_quantity', blank=True, null=True)
     mm18_notes = models.TextField(db_column='mm18_notes', blank=True, null=True)
     mm18_quantity = models.TextField(db_column='mm18_quantity', blank=True, null=True)
+
+    machined_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='machined_jobs')
 
     CNCMachine = models.ForeignKey(
         CNCMachineDescription,

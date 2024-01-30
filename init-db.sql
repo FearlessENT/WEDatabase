@@ -40,7 +40,9 @@ CREATE TABLE Job (
     mm18_notes TEXT,
     mm18_quantity TEXT,
     mm18_status TEXT,  -- New mm18_status column
+    machined_by_id INT NULL,
     FOREIGN KEY (CNCMachineID) REFERENCES CNCMachineDescription(MachineID)
+    FOREIGN KEY (machined_by_id) REFERENCES auth_user(id)
 );
 
 -- Modify the Part table to include a foreign key to Job
