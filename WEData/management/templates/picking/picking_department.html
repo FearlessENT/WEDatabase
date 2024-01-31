@@ -18,7 +18,8 @@
     <thead>
         <tr>
             <th>Job Name</th>
-            <th>Parts</th>
+            <th>Assigned CNC Machine</th>
+            
             <th>Machining Status</th>
             <th>Picking Status</th>
             <th>Notes</th>
@@ -28,11 +29,8 @@
         {% for job in page_obj %}
         <tr>
             <td>{{ job.job_name }}</td>
-            <td>
-                {% for part in job.part_set.all %}
-                    {{ part.product_code }}<br>
-                {% endfor %}
-            </td>
+            <td>{{ job.CNCMachine.machine_name }}</td>
+            
             <td>
                 {% if job.cncmachine %}
                     {{ job.cncmachine.machine_stage }}

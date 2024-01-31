@@ -9,12 +9,24 @@
 
 
 <div class="machine-list">
-    <h2>{{ machine_name }}</h2>
+
+    
+   
+    
 
 
         
     <div class="filter-container">
         <form method="get" action="." class = 'filter-form'>
+
+            <select name="machine" onchange="this.form.submit()">
+                <option value="">All Machines</option>
+                {% for machine in all_cnc_machines %}
+                    <option value="{{ machine.machine_id }}" {% if selected_machine_id == machine.machine_id|stringformat:"s" %}selected{% endif %}>
+                        {{ machine.machine_name }}
+                    </option>
+                {% endfor %}
+            </select>
 
             <select name="machined_status" id="machined_status" onchange="this.form.submit()">
                 <option value="all" {% if machined_status == 'all' %}selected{% endif %}>All</option>

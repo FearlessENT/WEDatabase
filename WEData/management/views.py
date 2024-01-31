@@ -687,52 +687,44 @@ def search_parts_ajax(request):
 
 
 
-
 from django.shortcuts import render
-from .models import CNCMachine
+from .models import CNCMachine, Job
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
-from django.db.models import Sum, Case, When, IntegerField
-from django.db.models import Q
-from django.db.models import Sum, Case, When, IntegerField, Q, Value, CharField
-from django.db.models.functions import Cast, Coalesce
-
-
-from .models import Job, Part
+from django.db.models import Sum, Case, When, IntegerField, Q, Value
+from django.db.models.functions import Cast
 
 @login_required
 @user_passes_test(is_machinist)
 def cnc_operator_jobs(request):
-    machine_name = None
-    machined_status = request.GET.get('machined_status', 'all')  # New filter parameter
+    machined_status = request.GET.get('machined_status', 'all')
+    selected_machine_id = request.GET.get('machine', '')
 
     try:
         num_machines = int(request.GET.get('num_machines', 10))
     except ValueError:
         num_machines = 10
 
-    if hasattr(request.user, 'profile') and request.user.profile.assigned_cnc_machine:
-        machine_id = request.user.profile.assigned_cnc_machine.machine_id
-        machines_query = CNCMachine.objects.filter(machine__machine_id=machine_id)
+    machines_query = CNCMachine.objects.filter(machine_id=selected_machine_id) if selected_machine_id else CNCMachine.objects.all()
+    all_cnc_machines = CNCMachineDescription.objects.all()
 
-        # Filter based on machined status
-        if machined_status == 'machined':
-            machines_query = machines_query.filter(machine_stage='Machined')  # Adjust the filter criteria as needed
-        elif machined_status == 'not_machined':
-            machines_query = machines_query.exclude(machine_stage='Machined')  # Adjust the filter criteria as needed
+    if selected_machine_id:
+        machines_query = machines_query.filter(machine__machine_id=selected_machine_id)
 
-        if machines_query.exists():
-            machine_name = machines_query.first().machine.machine_name
+    if machined_status == 'machined':
+        machines_query = machines_query.filter(machine_stage='Machined')
+    elif machined_status == 'not_machined':
+        machines_query = machines_query.exclude(machine_stage='Machined')
 
-        paginator = Paginator(machines_query, num_machines)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
+    paginator = Paginator(machines_query, num_machines)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
-    else:
-        page_obj = None
+    # Filter jobs based on the selected CNC machine
+    jobs_query = Job.objects.filter(cncmachine__in=machines_query)
 
-
-    totals = Job.objects.annotate(
+    # Calculate totals independently of the machined_status filter
+    totals = Job.objects.filter(cncmachine__in=machines_query).annotate(
         converted_mm8_quantity=Case(
             When(mm8_quantity__iexact='none', then=Value(0)),
             default=Cast('mm8_quantity', IntegerField()),
@@ -759,17 +751,16 @@ def cnc_operator_jobs(request):
             )
         )
     )
-        
 
     return render(request, 'machining/cnc_operator_jobs.html', {
         'page_obj': page_obj,
-        'machine_name': machine_name,
         'num_machines': num_machines,
-        'machined_status': machined_status,  
+        'machined_status': machined_status,
+        'all_cnc_machines': all_cnc_machines,
+        'selected_machine_id': selected_machine_id,
         'total_mm8_quantity': totals['total_mm8_quantity'],
         'total_mm18_quantity': totals['total_mm18_quantity']
     })
-
 
 
 
@@ -881,6 +872,9 @@ def update_job_mm8_stage(request):
 
         job = get_object_or_404(Job, job_id=job_id)
         job.mm8_status = mm8_stage  
+        if mm8_stage == 'Machined' and job.mm18_status == 'Machined':
+            job.machined_by = request.user
+
         job.save()
 
         return JsonResponse({'status': 'success'})
@@ -905,6 +899,8 @@ def update_job_mm18_stage(request):
 
         job = get_object_or_404(Job, job_id=job_id)
         job.mm18_status = mm18_stage 
+        if mm18_stage == 'Machined' and job.mm8_status == 'Machined':
+            job.machined_by = request.user
         job.save()
 
         return JsonResponse({'status': 'success'})
@@ -929,29 +925,18 @@ from django.core.paginator import Paginator
 from django.db.models import Prefetch
 
 def picking_department(request):
-    # Assuming CNCMachine has a field 'date_complete' and is related to Job
-    jobs_with_picking = Job.objects.prefetch_related(
-        Prefetch(
-            'cncmachine_set',
-            queryset=CNCMachine.objects.order_by('date_complete')
-        ),
-        'part_set'
-    ).all()
-
     picking_status_filter = request.GET.get('picking_status', None)
-    
-    # Apply sorting by the date_complete of the related CNCMachine
-    jobs_with_picking = jobs_with_picking.order_by('cncmachine__date_complete')
 
-        # Apply filter if picking_status_filter is provided
+    # Fetch jobs with related CNC machine information
+    jobs_with_picking = Job.objects.select_related('CNCMachine').all()
+
     if picking_status_filter in ['Picked', 'On Hold', 'Waiting']:
         jobs_with_picking = jobs_with_picking.filter(
             pickingprocess__picking_status=picking_status_filter
         )
 
-
     # Pagination setup
-    num_jobs = int(request.GET.get('num_jobs', 20))  # Default to 20 jobs per page
+    num_jobs = int(request.GET.get('num_jobs', 20))
     show_more = request.GET.get('show_more', False)
     if show_more:
         num_jobs += 20
@@ -961,6 +946,8 @@ def picking_department(request):
 
     context = {'page_obj': page_obj, 'current_filter': picking_status_filter}
     return render(request, 'picking/picking_department.html', context)
+
+
 
 
 
