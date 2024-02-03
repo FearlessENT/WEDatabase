@@ -49,6 +49,9 @@ urlpatterns = [
     path('assembly/assembly_department/', assembly_department, name='assembly_department'),
     path('update_assembly_notes/', views.update_assembly_notes, name='update_assembly_notes'),
     path('upholstery/upholstery_department/', views.upholstery_department, name='upholstery_department'),
+    path('assembly/update_comments/', views.update_assembly_comments, name='update_assembly_comments'),
+    path('update-assembly-status/', views.update_assembly_status, name='update_assembly_status'),
+    path('management/update-workshop-notes/<int:workshop_id>/', views.update_workshop_notes, name='update_workshop_notes'),
     
 
  

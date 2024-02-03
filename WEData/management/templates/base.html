@@ -17,52 +17,38 @@
 
     <div class="nav">
 
-        {% if is_machinist %}
-            <a href="{% url 'cnc_operator_jobs' %}">Machining</a>
-            <!-- More machinist-specific links -->
-        {% endif %}
-
-
-
-
-
-        
         {% if is_picking %}
             <a href="{% url 'picking_department' %}">Picking</a>
             <!-- More picking-specific links -->
         {% endif %}
-
-
-
         
         {% if is_assembly %}
             <a href="{% url 'assembly_department' %}">Assembly</a>
             <!-- More assembly-specific links -->
         {% endif %}
-
-
-
-
-
-
-        
         
         {% if is_upholstery %}
             <a href="{% url 'upholstery_department' %}">Upholstery</a>
-            <!-- More assembly-specific links -->
+            <!-- More upholstery-specific links -->
         {% endif %}
 
 
 
 
-        {% if is_reception %}
+        {% if is_cncmachining %}
+            <a href="{% url 'cnc_operator_jobs' %}">CNC Machining</a>
+        {% endif %}
+
+        {% if is_orders %}
             <a href="{% url 'order_list' %}">Orders</a>
+        {% endif %}
+
+        {% if is_job %}
             <a href="{% url 'job_list' %}">Jobs</a>
             <a href="{% url 'create_job' %}">Create Job</a>
-            <!-- <a href="{% url 'cnc_operator_jobs' %}">Machining Page</a> -->
         {% endif %}
 
-
+        
 
 
 

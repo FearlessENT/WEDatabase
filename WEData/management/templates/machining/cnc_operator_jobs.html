@@ -33,6 +33,7 @@
                 <option value="machined" {% if machined_status == 'machined' %}selected{% endif %}>Machined</option>
                 <option value="not_machined" {% if machined_status == 'not_machined' %}selected{% endif %}>Not Machined</option>
             </select>
+            <input type="hidden" name="num_machines" value="{{ num_machines }}">
         </form>
     </div>
 
@@ -81,6 +82,7 @@
                                 <option value="On Hold" {% if machine.job.mm8_status == 'On Hold' %}selected{% endif %}>On Hold</option>
                                 <option value="Machined" {% if machine.job.mm8_status == 'Machined' %}selected{% endif %}>Machined</option>
                             </select>
+                            
                         </form>
                     </div>
                 </td>
@@ -95,6 +97,7 @@
                                 <option value="On Hold" {% if machine.job.mm18_status == 'On Hold' %}selected{% endif %}>On Hold</option>
                                 <option value="Machined" {% if machine.job.mm18_status == 'Machined' %}selected{% endif %}>Machined</option>
                             </select>
+                            
                         </form>
                     </div>                    
                 </td>
@@ -134,9 +137,15 @@
 
 <div class="pagination-container">
     {% if page_obj.has_next %}
-        <form method="get" action=".">
-            <input type="hidden" name="num_machines" value="{{ num_machines|add:10 }}">
+        <form method="get" action="">
+            <!-- Retain current filters as hidden fields -->
             <input type="hidden" name="machined_status" value="{{ machined_status }}">
+            <input type="hidden" name="machine" value="{{ selected_machine_id }}">
+            
+            <!-- Increment the number of machines displayed -->
+            <input type="hidden" name="num_machines" value="{{ num_machines|add:10 }}">
+            
+            <!-- Show More button -->
             <button type="submit" id="show-more">Show More</button>
         </form>
     {% endif %}

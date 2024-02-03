@@ -29,22 +29,6 @@ def is_admin(user):
     return user.groups.filter(name='Admin').exists()
 
 
-def is_machinist(user):
-    if user.groups.filter(name='Machinist').exists() or is_admin(user):
-        return True
-    else:
-        return False
-
-
-
-
-def is_reception(user):
-    if user.groups.filter(name='Reception').exists() or is_admin(user):
-        return True
-    else:
-        return False
-
-
 
 
 
@@ -54,6 +38,52 @@ def is_picking(user):
         return True
     else:
         return False
+
+
+
+def is_cncmachining(user):
+    if user.groups.filter(name='CNCMachining').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+
+def is_orders(user):
+    if user.groups.filter(name='Orders').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+def is_job(user):
+    if user.groups.filter(name='Jobs').exists() or is_admin(user):
+        return True
+    else:
+        return False
+    
+
+
+def is_assembly(user):
+    if user.groups.filter(name='Assembly').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+
+
+def is_upholstery(user):
+    if user.groups.filter(name='Upholstery').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
+
+
+
+
 
 
 
@@ -92,7 +122,7 @@ def clean_value(value):
 
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_orders)
 def order_list(request):
     # Existing search queries
     customer_query = request.GET.get('customer_search', '')
@@ -157,7 +187,7 @@ from django.core.paginator import Paginator
 from .models import Customer, Order
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_orders)
 def customer_orders(request, customer_id):
     customer = get_object_or_404(Customer, customer_id=customer_id)
 
@@ -224,7 +254,7 @@ from django.shortcuts import render, get_object_or_404
 from .models import Order, Part, Job
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_orders)
 def order_detail(request, sage_order_number):
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
     parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code', 'job')
@@ -248,7 +278,7 @@ from .models import Order, Customer
 from django.db.models import Q
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_orders)
 def api_orders(request):
     status_filter = request.GET.get('status', 'all')
     orders_query = Order.objects.select_related('customer')
@@ -286,7 +316,7 @@ from .models import Job, Part, Order, PickingProcess, CNCMachine, Workshop
 
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def job_detail(request, job_id):
     job = get_object_or_404(Job, job_id=job_id)
     cnc_machines = CNCMachineDescription.objects.all()
@@ -345,7 +375,7 @@ def job_detail(request, job_id):
 from django.shortcuts import redirect
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def update_order_notes(request):
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
@@ -387,7 +417,7 @@ from django.shortcuts import render
 from .models import Order, Part, OrdertoJobBridge
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def job_search_results(request):
     job_query = request.GET.get('job_search', '')
 
@@ -409,7 +439,7 @@ from django.core.paginator import Paginator
 from django.db.models import Max
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def job_list(request):
     job_query = request.GET.get('job_search', '')
 
@@ -452,7 +482,7 @@ from django.http import HttpResponseRedirect
 from .models import Job
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def update_job_notes(request):
     if request.method == 'POST':
         job_id = request.POST.get('job_id')
@@ -482,26 +512,48 @@ from .forms import CreateJobForm
 from .models import Job, Part
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def create_job(request):
     if request.method == 'POST':
         form = CreateJobForm(request.POST)
         if form.is_valid():
             new_job = form.save()
 
-            # Assign the temporarily stored parts to this new job
-            selected_parts = request.session.get('selected_parts', [])
-            Part.objects.filter(part_id__in=selected_parts).update(job=new_job)
 
+            cnc_machine_description = form.cleaned_data.get('CNCMachine')
+
+            if cnc_machine_description:
+                new_job.CNCMachine = cnc_machine_description
+                new_job.save()
+
+                # Create a new CNCMachine entry for this job
+                CNCMachine.objects.create(
+                    machine=cnc_machine_description,
+                    job=new_job
+                )
+
+            # Assign parts to the new job only if selected
+            selected_parts = request.session.get('selected_parts', [])
+            if selected_parts:
+                Part.objects.filter(part_id__in=selected_parts).update(job=new_job)
 
             # Clear the temporary storage
-            del request.session['selected_parts']
+            request.session.pop('selected_parts', None)
 
             return redirect('job_list')
     else:
         form = CreateJobForm()
 
-    
+    unassigned_parts = Part.objects.filter(job__isnull=True).select_related(
+        'sage_order_number', 
+        'sage_order_number__customer', 
+        'product_code'  
+    )
+    return render(request, 'management/create_job.html', {
+    'form': form,
+    'unassigned_parts': unassigned_parts,
+    })
+
 
 
 
@@ -532,7 +584,7 @@ import json
 @csrf_exempt
 @require_POST
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def add_part_to_job(request):
     try:
         data = json.loads(request.body)
@@ -556,7 +608,7 @@ def add_part_to_job(request):
 @csrf_exempt
 @require_POST
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def remove_part_from_job(request):
     try:
         data = json.loads(request.body)
@@ -589,7 +641,7 @@ import json
 @csrf_exempt
 @require_POST
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def update_job_machine(request):
     try:
         data = json.loads(request.body)
@@ -614,7 +666,7 @@ from django.shortcuts import get_object_or_404, redirect
 from .models import Job, CNCMachineDescription
 
 @login_required
-@user_passes_test(is_reception)
+@user_passes_test(is_job)
 def update_job_machine(request, job_id):
     if request.method == 'POST':
         job = get_object_or_404(Job, pk=job_id)
@@ -695,18 +747,20 @@ from django.db.models import Sum, Case, When, IntegerField, Q, Value
 from django.db.models.functions import Cast
 
 @login_required
-@user_passes_test(is_machinist)
+@user_passes_test(is_cncmachining)
 def cnc_operator_jobs(request):
     machined_status = request.GET.get('machined_status', 'all')
     selected_machine_id = request.GET.get('machine', '')
+    # Attempt to get 'num_machines' from the session if not present in the GET request
+    num_machines = request.GET.get('num_machines') or request.session.get('num_machines', 20)
 
     try:
         num_machines = int(request.GET.get('num_machines', 10))
     except ValueError:
         num_machines = 10
 
-    machines_query = CNCMachine.objects.filter(machine_id=selected_machine_id) if selected_machine_id else CNCMachine.objects.all()
-    all_cnc_machines = CNCMachineDescription.objects.all()
+    machines_query = CNCMachine.objects.filter(machine_id=selected_machine_id).order_by('-cnc_machine_id') if selected_machine_id else CNCMachine.objects.all().order_by('-cnc_machine_id')
+    all_cnc_machines = CNCMachineDescription.objects.all().order_by('-pk')
 
     if selected_machine_id:
         machines_query = machines_query.filter(machine__machine_id=selected_machine_id)
@@ -788,6 +842,7 @@ from django.http import HttpResponseRedirect
 from .models import CNCMachine
 
 @login_required
+@user_passes_test(is_cncmachining)
 def update_machine_notes(request):
     if request.method == 'POST':
         cnc_machine_id = request.POST.get('cnc_machine_id')
@@ -832,6 +887,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
+@login_required
+@user_passes_test(is_cncmachining)
 def update_machine_stage(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -864,6 +921,8 @@ def update_machine_stage(request):
 
 
 @csrf_exempt
+@login_required
+@user_passes_test(is_cncmachining)
 def update_job_mm8_stage(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -891,6 +950,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 @csrf_exempt
+@login_required
+@user_passes_test(is_cncmachining)
 def update_job_mm18_stage(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -924,19 +985,29 @@ from .models import Job, Part
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 
+@login_required
+@user_passes_test(is_picking)
 def picking_department(request):
     picking_status_filter = request.GET.get('picking_status', None)
 
-    # Fetch jobs with related CNC machine information
-    jobs_with_picking = Job.objects.select_related('CNCMachine').all()
+    # Fetch jobs where either mm8_status or mm18_status is 'Machined'
+    jobs_with_picking = Job.objects.select_related('CNCMachine').filter(
+        Q(mm8_status='Machined') | Q(mm18_status='Machined')
+    )
 
-    if picking_status_filter in ['Picked', 'On Hold', 'Waiting']:
-        jobs_with_picking = jobs_with_picking.filter(
-            pickingprocess__picking_status=picking_status_filter
-        )
+    # Apply picking status filter if provided
+    if picking_status_filter:
+        if picking_status_filter in ['Picked', 'On Hold', 'Waiting']:
+            jobs_with_picking = jobs_with_picking.filter(
+                pickingprocess__picking_status=picking_status_filter
+            )
+        elif picking_status_filter == 'not_picked':
+            jobs_with_picking = jobs_with_picking.exclude(
+                pickingprocess__picking_status='Picked'
+            )
 
     # Pagination setup
-    num_jobs = int(request.GET.get('num_jobs', 20))
+    num_jobs = int(request.GET.get('num_jobs', 20))  # Default to 20 jobs per page
     show_more = request.GET.get('show_more', False)
     if show_more:
         num_jobs += 20
@@ -949,10 +1020,9 @@ def picking_department(request):
 
 
 
-
-
-
 @csrf_exempt
+@login_required
+@user_passes_test(is_picking)
 def update_picking_status(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -977,6 +1047,8 @@ from .models import PickingProcess
 import json
 
 @csrf_exempt
+@login_required
+@user_passes_test(is_picking)
 def save_picking_notes(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -998,6 +1070,8 @@ def save_picking_notes(request):
 
 
 @csrf_exempt
+@login_required
+@user_passes_test(is_picking)
 def update_picking_notes(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -1021,49 +1095,121 @@ def update_picking_notes(request):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from django.core.paginator import Paginator
-from .models import Workshop, WorkshopTypes, Order, PartDescription
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Workshop, WorkshopTypes
 
+@login_required
+@user_passes_test(is_assembly)
 def assembly_department(request):
+    assembly_status_filter = request.GET.get('assembly_status', 'all')
+    
+    # Fetch only the 'assembly' workshop types
+    assembly_workshop_type = WorkshopTypes.objects.get(workshop_name="assembly")
+    
+    # Start with all workshops of the 'assembly' type
+    workshops_query = Workshop.objects.filter(workshop_id=assembly_workshop_type)
+
+    # Filter by assembly_status if specified
+    if assembly_status_filter in ['Built', 'Waiting']:
+        workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+    
 
 
+    
+    # Default number of items to display
+    num_items = int(request.GET.get('num_items', 20))  # Start with 20 items
 
-    workshop_filter = request.GET.get('workshop', None)
-    workshops = Workshop.objects.select_related('workshop_id').all()
+    # Check if 'Show More' has been clicked
+    if 'show_more' in request.GET:
+        num_items += 20  # Show 20 more items
 
-    if workshop_filter and workshop_filter.isdigit():
-        workshops = workshops.filter(workshop_id__workshop_id=int(workshop_filter))
-
-    workshop_types = WorkshopTypes.objects.all()
-    num_processes = int(request.GET.get('num_processes', 20))
-
-
-
-
-
-
-
-    # Fetch assembly processes with related data
-    assembly_processes = Workshop.objects.select_related('workshop_id', 'sage_order_number', 'product_code').all()
-
-
-    # Logic to calculate picking status for each part in the order
-    for process in assembly_processes:
-        # Example logic, adjust based on your actual model relations
-        parts = Part.objects.filter(sage_order_number=process.sage_order_number)
-        process.picking_status_indicator = all(part.picking_status == 'Picked' for part in parts)
-
-    # Pagination setup
-    num_processes = int(request.GET.get('num_processes', 20))
-    paginator = Paginator(assembly_processes, num_processes)
+    paginator = Paginator(workshops_query, num_items)
     page_obj = paginator.get_page(1)
-
-    context = {
+    
+    return render(request, 'assembly/assembly_department.html', {
         'page_obj': page_obj,
-        'workshop_types': workshop_types,
-        'current_filter': workshop_filter
-    }
-    return render(request, 'assembly/assembly_department.html', context)
+        'assembly_status_filter': assembly_status_filter
+    })
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Workshop
+import json
+from django.utils import timezone
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_assembly)
+def update_assembly_status(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        workshop_id = data.get('workshop_id')
+        assembly_status = data.get('assembly_status')
+
+        workshop = get_object_or_404(Workshop, id=workshop_id)
+        workshop.assembly_status = assembly_status
+        workshop.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Workshop
+
+@login_required
+@user_passes_test(is_assembly)  # Adapt this decorator to your assembly permission logic
+def update_workshop_notes(request, workshop_id):
+    if request.method == 'POST':
+        workshop_notes = request.POST.get('workshop_notes')
+
+        workshop = get_object_or_404(Workshop, id=workshop_id)
+        workshop.notes = workshop_notes
+        workshop.save()
+
+        # Redirect back to the referring page
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            # Fallback redirect if referer URL is not available
+            return redirect('assembly_department')  # Replace with your actual default redirect URL
+
+    # Handle non-POST requests here
+    # ...
+
+    # Optional: Redirect or show an error for non-POST requests
+    return redirect('assembly_department')
 
 
 
@@ -1071,6 +1217,51 @@ def assembly_department(request):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.http import HttpResponseRedirect
+from .models import Part
+
+def update_assembly_comments(request):
+    if request.method == 'POST':
+        part_id = request.POST.get('part_id')
+        comment1 = request.POST.get('comment1', '')
+        comment2 = request.POST.get('comment2', '')
+        
+        # Fetch the part object and update the comments
+        try:
+            part = Part.objects.get(id=part_id)
+            part.comment1 = comment1
+            part.comment2 = comment2
+            part.save()
+            # Redirect to a success page or back to the assembly department page
+            return HttpResponseRedirect('/management/assembly/assembly_department/')
+        except Part.DoesNotExist:
+            # Handle the error or redirect to an error page
+            pass
+
+    # If not POST or part does not exist, redirect to a default page
+    return HttpResponseRedirect('/management/assembly/assembly_department/')
 
 
 
@@ -1081,6 +1272,8 @@ from .models import Workshop
 import json
 
 @csrf_exempt
+@login_required
+@user_passes_test(is_assembly)
 def update_assembly_notes(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -1107,9 +1300,30 @@ def update_assembly_notes(request):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 from django.core.paginator import Paginator
 from .models import Workshop, WorkshopTypes, Order, PartDescription
 
+@login_required
+@user_passes_test(is_upholstery)
 def upholstery_department(request):
 
 

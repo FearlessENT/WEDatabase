@@ -4,12 +4,19 @@
 <h2>Picking Department</h2>
 
 <div class="filter-container">
-    <form method="get" action="{% url 'picking_department' %}" class = 'filter-form'>
+
+
+
+
+
+    <form method="get" action="{% url 'picking_department' %}" class='filter-form'>
         <select name="picking_status" onchange="this.form.submit()">
             <option value="">All</option>
             <option value="Picked" {% if current_filter == 'Picked' %}selected{% endif %}>Picked</option>
             <option value="On Hold" {% if current_filter == 'On Hold' %}selected{% endif %}>On Hold</option>
             <option value="Waiting" {% if current_filter == 'Waiting' %}selected{% endif %}>Waiting</option>
+            <option value="not_picked" {% if current_filter == 'not_picked' %}selected{% endif %}>All Not Picked</option>
+            
         </select>
     </form>
 </div>
@@ -19,8 +26,8 @@
         <tr>
             <th>Job Name</th>
             <th>Assigned CNC Machine</th>
-            
-            <th>Machining Status</th>
+            <th>18mm Status</th>
+            <th>8mm Status</th>
             <th>Picking Status</th>
             <th>Notes</th>
         </tr>
@@ -32,8 +39,15 @@
             <td>{{ job.CNCMachine.machine_name }}</td>
             
             <td>
-                {% if job.cncmachine %}
-                    {{ job.cncmachine.machine_stage }}
+                {% if job.mm18_status %}
+                    {{ job.mm18_status }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>
+                {% if job.mm8_status %}
+                    {{ job.mm8_status }}
                 {% else %}
                     N/A
                 {% endif %}
@@ -63,7 +77,16 @@
     </tbody>
 </table>
 
-<a href="?show_more=True&num_jobs={{ page_obj.paginator.per_page }}" id="show-more">Show More</a>
+<form method="get" action="{% url 'picking_department' %}">
+    <!-- Hidden input for current filter -->
+    <input type="hidden" name="picking_status" value="{{ current_filter }}">
+
+    <!-- Hidden input for number of jobs, incrementing the current count -->
+    <input type="hidden" name="num_jobs" value="{{ page_obj.paginator.per_page|add:20 }}">
+
+    <!-- Show More button -->
+    <button type="submit" id="show-more">Show More</button>
+</form>
 
 
 <script>

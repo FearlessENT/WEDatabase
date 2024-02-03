@@ -3,57 +3,62 @@
 {% block content %}
 <h2>Assembly Department</h2>
 
-
-
-<form method="get" action=".">
-    <select name="workshop" onchange="this.form.submit()">
-        <option value="">All Workshops</option>
-        {% for type in workshop_types %}
-            <option value="{{ type.workshop_id }}" {% if current_filter == type.workshop_id %}selected{% endif %}>
-                {{ type.workshop_name }}
-            </option>
-        {% endfor %}
-    </select>
-</form>
-
-
-
+<div class="filter-container">
+    <form method="get" action="." class='filter-form'>
+        <select name="assembly_status" onchange="this.form.submit()">
+            <option value="all">All</option>
+            <option value="Built" {% if assembly_status_filter == 'Built' %}selected{% endif %}>Built</option>
+            <option value="Waiting" {% if assembly_status_filter == 'Waiting' %}selected{% endif %}>Waiting</option>
+        </select>
+    </form>
+</div>
 
 
 <table>
     <thead>
         <tr>
-            <th>Workshop Name</th>
             <th>Order Number</th>
             <th>Product Code</th>
+            <th>Product Description</th>
+            <th>Workshop Notes</th>
             <th>Assembly Status</th>
-            <th>Notes</th>
             <th>Picking Status</th>
-            <th>Action</th>
+            <!-- Add more headers if needed -->
         </tr>
     </thead>
     <tbody>
-        {% for process in page_obj %}
+        {% for workshop in page_obj %}
         <tr>
-            <td>{{ process.workshop_id.workshop_name }}</td>
-            <td>{{ process.sage_order_number.sage_order_number }}</td>
-            <td>{{ process.product_code.product_code }}</td>
+            <td>{{ workshop.sage_order_number.sage_order_number }}</td>
+            <td>{{ workshop.product_code.product_code }}</td>
+            <!-- Assuming there is a relationship to access product description from workshop -->
+            <td>{{ workshop.product_code.product_description }}</td>
             <td>
-                <!-- Dropdown for assembly status -->
+                <div class="notes-container">
+                    <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
+                        {% csrf_token %}
+                        <textarea name="workshop_notes" class="autoresize" placeholder="Add notes here">{{ workshop.notes|default_if_none:"" }}</textarea>
+                        <input type="hidden" name="workshop_id" value="{{ workshop.id }}">
+                        <input type="submit" value="Save" class="save-btn">
+                    </form>
+                </div>
             </td>
+            <!-- Assuming you can access the picking status from workshop or related order/part -->
             <td>
-                <!-- Textarea for notes -->
+                <div class="filter-form">
+                    <form data-workshop-id="{{ workshop.id }}">
+                        <select name="assembly_status" class="assembly-status-selector">
+                            <option value="Built" {% if workshop.assembly_status == 'Built' %}selected{% endif %}>Built</option>
+                            <option value="Waiting" {% if workshop.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                        </select>
+                    </form>
+                </div>
             </td>
+            <td>{{ workshop.sage_order_number.part_set.first.picking_status }}</td>
+            
+            <!-- Replace 'part_set.first.picking_status' with the correct way to access picking status -->
             <td>
-                <!-- Visual indicator for picking status -->
-                {% if process.picking_status_indicator %}
-                    <span class="green-indicator">All Picked</span>
-                {% else %}
-                    <span class="red-indicator">Pending</span>
-                {% endif %}
-            </td>
-            <td>
-                <!-- Save button -->
+                <!-- Action buttons like 'Edit', 'Delete', or 'Update Status' could be here -->
             </td>
         </tr>
         {% endfor %}
@@ -64,26 +69,22 @@
 
 <div class="pagination-container">
     {% if page_obj.has_next %}
-        <form method="get" action=".">
-            <input type="hidden" name="num_processes" value="{{ page_obj.paginator.per_page|add:10 }}">
-            <!-- Include any other parameters you need to maintain -->
+        <form method="get" action="">
+            <!-- Retain current filters as hidden fields -->
+            <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
+            
+            <!-- Increment the number of items displayed -->
+            <input type="hidden" name="num_items" value="{{ page_obj.paginator.per_page|add:20 }}">
+            
+            <!-- Show More button -->
             <button type="submit" id="show-more">Show More</button>
         </form>
     {% endif %}
 </div>
 
 
+
 <script>
-
-
-
-
-
-
-
-
-
-    // Script for Show More button and maintaining scroll position
     document.getElementById('show-more').addEventListener('click', function() {
         localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
     });
@@ -97,48 +98,32 @@
 
 
 
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.assembly-status-selector').forEach(function(select) {
+            select.addEventListener('change', function() {
+                const form = this.closest('form');
+                const workshopId = form.getAttribute('data-workshop-id');
+                const selectedStatus = this.value;
 
-
-
-
-
-
-
-
-
-
-
-
-
-    function saveAssemblyNotes(buttonElement) {
-        const form = buttonElement.closest('.assembly-notes-form');
-        const jobId = form.getAttribute('data-job-id');
-        const notes = form.querySelector('textarea[name="assembly_notes"]').value;
-    
-        fetch('/path/to/update_assembly_notes/', { // Replace with your actual URL endpoint
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 'job_id': jobId, 'notes': notes })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Notes updated successfully:", data);
-            // Optional: Add any UI updates here
-        })
-        .catch(error => {
-            console.error("Failed to update notes:", error);
-            // Optional: Handle error in UI
+                fetch(`/management/update-assembly-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'workshop_id': workshopId, 'assembly_status': selectedStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data); // Debugging
+                })
+                .catch(error => {
+                    console.error("Error:", error); // Debugging
+                });
+            });
         });
-    }
-    
+    });
+
     function getCSRFToken() {
         const cookies = document.cookie.split(';');
         for (let cookie of cookies) {
@@ -150,11 +135,6 @@
         return '';
     }
 </script>
-    
-
-
-
-
 
 
 
