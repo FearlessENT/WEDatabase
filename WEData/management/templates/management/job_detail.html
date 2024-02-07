@@ -32,7 +32,24 @@
                 <label for="id_job_notes">Job Notes:</label>
                 <textarea name="job_notes" class="form-control autoresize" rows="2" id="id_job_notes" class="autoresize">{{ job.job_notes }}</textarea>
             </div>
+
+
+      
+            {% for machine in cnc_infos %}
+                <div class="flex-item">
+                    <label for="machine_notes_{{ machine.cnc_machine_id }}">Machine {{ machine.machine_name }} Notes:</label>
+                    <textarea name="machine_notes_{{ machine.cnc_machine_id }}" id="machine_notes_{{ machine.cnc_machine_id }}" class="form-control autoresize" rows="2" placeholder="Add notes here">{{ machine.notes|default_if_none:"" }}</textarea>
+                </div>
+            {% endfor %}
+     
+
+
+
         </div>
+
+
+
+
     
         <!-- 8mm Fields -->
         <div class="flex-container">

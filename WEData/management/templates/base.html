@@ -48,7 +48,13 @@
             <a href="{% url 'create_job' %}">Create Job</a>
         {% endif %}
 
-        
+        {% if is_plywood %}
+            <a href="{% url 'plywood_department' %}">Plywood</a>
+        {% endif %}
+
+        {% if is_minikitchen %}
+            <a href="{% url 'minikitchen_department' %}">MiniKitchen</a>
+        {% endif %}
 
 
 

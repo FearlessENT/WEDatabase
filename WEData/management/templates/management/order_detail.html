@@ -23,10 +23,24 @@
                 <th>Order Value:</th>
                 <td>£ {{ order.value|intcomma }}</td>
             </tr>
+
             <tr>
-                <th>Codes</th>
-                <td>{{ order.order_notes }}</td>
+                <th>Codes:</th>
+                <td>
+                    {% if codes %}
+                        <ul style="list-style-type:none; padding: 0; margin: 0;">
+                            {% for code in codes %}
+                                <li>{{ code.label }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </td>
             </tr>
+
+
+
+
+
             <!-- Add more rows as needed -->
         </table>
         <!-- Add more fields as needed -->

@@ -82,6 +82,21 @@ def is_upholstery(user):
 
 
 
+def is_minikitchen(user):
+    if user.groups.filter(name='MiniKitchen').exists() or is_admin(user):
+        return True
+    else:
+        return False
+    
+
+
+def is_plywood(user):
+    if user.groups.filter(name='Plywood').exists() or is_admin(user):
+        return True
+    else:
+        return False
+
+
 
 
 
@@ -147,6 +162,7 @@ def order_list(request):
         orders = orders.filter(status='Complete')  # Adjust field and value as per your model
     elif status_filter == 'incomplete':
         orders = orders.exclude(status='Complete')  # Adjust field and value as per your model
+
 
     # Pagination setup
     num_orders = int(request.GET.get('num_orders', 20))  # Default to 10 orders per page
@@ -259,15 +275,21 @@ def order_detail(request, sage_order_number):
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
     parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code', 'job')
 
-    # No need to fetch job information separately as it's already joined with parts
+    # Use the 'user_notes' field to extract the codes
+    if order.order_notes:
+        print(order.order_notes)
+        codes_list = [code.strip() for code in order.order_notes.split(';') if code.strip()]
+        codes = [{'label': c.split(';')[0].strip(), 'value': c.split(':')[1].strip()} for c in codes_list if ':' in c]
+    else:
+        codes = []
+
     cleaned_order_value = clean_value(order.value)
 
     return render(request, 'management/order_detail.html', {
         'order': order,
-        'parts': parts
+        'parts': parts,
+        'codes': codes
     })
-
-
 
 
 
@@ -337,6 +359,15 @@ def job_detail(request, job_id):
             job.mm18_quantity = request.POST.get('mm18_quantity')
 
         job.save()
+
+        # Update machine notes
+        cnc_machines = CNCMachine.objects.filter(job_id=job_id)
+        for machine in cnc_machines:
+            machine_notes = request.POST.get(f'machine_notes_{machine.cnc_machine_id}', None)
+            if machine_notes is not None:
+                machine.notes = machine_notes
+                machine.save()
+                
         return redirect('job_detail', job_id=job.job_id)
 
     # Fetch parts linked to the job
@@ -349,7 +380,7 @@ def job_detail(request, job_id):
     picking_infos = PickingProcess.objects.filter(job_id=job_id)
 
     # Fetch CNC machine info linked to the job
-    cnc_infos = CNCMachine.objects.filter(job_id=job_id)
+    cnc_infos = CNCMachine.objects.filter(job_id=job_id).values('cnc_machine_id', 'machine__machine_name', 'notes')
     # Fetch CNC machine information for each part
     cnc_status = CNCMachine.objects.filter(job=job).first()
     machining_status = cnc_status.machine_stage if cnc_status else 'Not Available'
@@ -1117,38 +1148,57 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import Workshop, WorkshopTypes
 
+
+
 @login_required
 @user_passes_test(is_assembly)
 def assembly_department(request):
     assembly_status_filter = request.GET.get('assembly_status', 'all')
+    picking_status_filter = request.GET.get('picking_status', 'all')
+    sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
     
     # Fetch only the 'assembly' workshop types
     assembly_workshop_type = WorkshopTypes.objects.get(workshop_name="assembly")
     
-    # Start with all workshops of the 'assembly' type
     workshops_query = Workshop.objects.filter(workshop_id=assembly_workshop_type)
 
-    # Filter by assembly_status if specified
+    if sort_order == 'newest':
+        workshops_query = workshops_query.order_by('-id')  # Sort by primary key descending
+    elif sort_order == 'oldest':
+        workshops_query = workshops_query.order_by('id')  # Sort by primary key ascending
+
+
     if assembly_status_filter in ['Built', 'Waiting']:
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+
+    if picking_status_filter == 'not_waiting':
+        # Since there's no direct 'part' field in 'Order', you should use related queries.
+        # This approach assumes that you want to exclude Workshops linked to any Orders that have all parts in 'Waiting' status.
+        # Find Orders that have no parts with 'picking_status' not equal to 'Waiting'.
+        orders_with_non_waiting_parts = Order.objects.exclude(part__picking_status='Waiting').values_list('sage_order_number', flat=True)
+
+        workshops_query = workshops_query.filter(sage_order_number__in=orders_with_non_waiting_parts)
+
     
 
-
-    
-    # Default number of items to display
-    num_items = int(request.GET.get('num_items', 20))  # Start with 20 items
-
-    # Check if 'Show More' has been clicked
+    # Default number of items to display, increment if 'Show More' is clicked
+    num_items = int(request.GET.get('num_items', 20))
     if 'show_more' in request.GET:
-        num_items += 20  # Show 20 more items
+        num_items += 20
 
-    paginator = Paginator(workshops_query, num_items)
+    # Set up pagination
+    paginator = Paginator(workshops_query.distinct(), num_items)
     page_obj = paginator.get_page(1)
     
     return render(request, 'assembly/assembly_department.html', {
         'page_obj': page_obj,
-        'assembly_status_filter': assembly_status_filter
+        'assembly_status_filter': assembly_status_filter,
+        'picking_status_filter': picking_status_filter,
+        'sort_order': sort_order,  # Pass sort_order to the template
+        
     })
+
+
 
 
 
@@ -1294,6 +1344,84 @@ def update_assembly_notes(request):
 
 
 
+
+
+
+
+
+
+
+
+
+
+@login_required
+@user_passes_test(is_minikitchen) 
+def minikitchen_department(request):
+    assembly_status_filter = request.GET.get('assembly_status', 'all')
+
+    sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+    
+    workshop_type = WorkshopTypes.objects.get(workshop_name="Minikitchen")
+    workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
+
+    if assembly_status_filter in ['Built', 'Waiting']:
+        workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+
+
+    if sort_order == 'newest':
+        workshops_query = workshops_query.order_by('-id')  # Sort by primary key descending
+    elif sort_order == 'oldest':
+        workshops_query = workshops_query.order_by('id')  # Sort by primary key ascending
+    
+
+    num_items = int(request.GET.get('num_items', 20))
+    if 'show_more' in request.GET:
+        num_items += 20
+
+    paginator = Paginator(workshops_query, num_items)
+    page_obj = paginator.get_page(1)
+    
+    return render(request, 'assembly/minikitchen_department.html', {
+        'page_obj': page_obj,
+        'assembly_status_filter': assembly_status_filter,
+        'sort_order': sort_order,  # Pass sort_order to the template
+    })
+
+
+
+
+@login_required
+@user_passes_test(is_plywood)
+def plywood_department(request):
+    assembly_status_filter = request.GET.get('assembly_status', 'all')
+
+    sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+    
+    workshop_type = WorkshopTypes.objects.get(workshop_name="Plywood")
+    workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
+
+    if assembly_status_filter in ['Built', 'Waiting']:
+        workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+
+    
+    if sort_order == 'newest':
+        workshops_query = workshops_query.order_by('-id')  # Sort by primary key descending
+    elif sort_order == 'oldest':
+        workshops_query = workshops_query.order_by('id')  # Sort by primary key ascending
+
+
+    num_items = int(request.GET.get('num_items', 20))
+    if 'show_more' in request.GET:
+        num_items += 20
+
+    paginator = Paginator(workshops_query, num_items)
+    page_obj = paginator.get_page(1)
+    
+    return render(request, 'assembly/plywood_department.html', {
+        'page_obj': page_obj,
+        'assembly_status_filter': assembly_status_filter,
+        'sort_order': sort_order,  # Pass sort_order to the template
+    })
 
 
 

@@ -17,6 +17,8 @@ from .views import update_job_mm8_stage
 from .views import update_job_mm18_stage
 from .views import picking_department
 from .views import assembly_department
+from .views import minikitchen_department
+from .views import plywood_department
 
 
 urlpatterns = [
@@ -52,6 +54,8 @@ urlpatterns = [
     path('assembly/update_comments/', views.update_assembly_comments, name='update_assembly_comments'),
     path('update-assembly-status/', views.update_assembly_status, name='update_assembly_status'),
     path('management/update-workshop-notes/<int:workshop_id>/', views.update_workshop_notes, name='update_workshop_notes'),
+    path('assembly/minikitchen_department/', minikitchen_department, name='minikitchen_department'),
+    path('assembly/plywood_department/', plywood_department, name='plywood_department'),
     
 
  

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Assembly Department</h2>
+<h2>MiniKitchen Department</h2>
 
 <div class="filter-container">
     <!-- Assembly Status Filter Form -->
@@ -14,18 +14,7 @@
         <!-- Retain the value of the other filter -->
         <input type="hidden" name="picking_status" value="{{ picking_status_filter }}">
     </form>
-    
-    <!-- Picking Status Filter Form -->
-    <form method="get" action="." class='filter-form'>
-        <select name="picking_status" onchange="this.form.submit()">
-            <option value="all">All Picking Statuses</option>
-            <option value="not_waiting" {% if picking_status_filter == 'not_waiting' %}selected{% endif %}>All Not Waiting</option>
-        </select>
-        <!-- Retain the value of the other filter -->
-        <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
-    </form>
 
-    
     <!-- Sorting Filter Form -->
     <form method="get" action="." class="filter-form">
         <select name="sort_order" onchange="this.form.submit()">
@@ -36,6 +25,9 @@
         <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
         
     </form>
+
+    
+
 </div>
 
 
@@ -51,7 +43,7 @@
             <th>Product Description</th>
             <th>Workshop Notes</th>
             <th>Assembly Status</th>
-            <th>Picking Status</th>
+            
             <!-- Add more headers if needed -->
         </tr>
     </thead>
@@ -84,12 +76,9 @@
                     </form>
                 </div>
             </td>
-            <td>{{ workshop.sage_order_number.part_set.first.picking_status }}</td>
             
-            <!-- Replace 'part_set.first.picking_status' with the correct way to access picking status -->
-            <td>
-                <!-- Action buttons like 'Edit', 'Delete', or 'Update Status' could be here -->
-            </td>
+            
+       
         </tr>
         {% endfor %}
     </tbody>
