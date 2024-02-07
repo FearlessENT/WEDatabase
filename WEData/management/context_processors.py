@@ -12,6 +12,7 @@ def user_role_context(request):
         'is_upholstery': request.user.groups.filter(name='Upholstery').exists() or request.user.groups.filter(name='Admin').exists(),
         'is_plywood': request.user.groups.filter(name='Plywood').exists() or request.user.groups.filter(name='Admin').exists(),
         'is_minikitchen': request.user.groups.filter(name='Minikitchen').exists() or request.user.groups.filter(name='Admin').exists(),
+        'is_misc': request.user.groups.filter(name='Misc').exists() or request.user.groups.filter(name='Admin').exists(),
 
         # Add other roles as needed
     }

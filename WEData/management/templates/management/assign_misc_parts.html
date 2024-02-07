@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="create-job-container">
+    <!-- Top Section -->
+    <div class="top-section">
+        <!-- Job Creation Form -->
+        <!-- Include the form if needed -->
+
+        <!-- Miscellaneous Table -->
+        <div id="misc-table">
+            <h3>Miscellaneous Table</h3>
+            <table id="misc-items">
+                <thead>
+                    <tr>
+                        <th>Part ID</th>
+                        <th>Product Code</th>
+                        <th>Product Description</th>
+                        <th>Sage Order Number</th>
+                        <th>Customer Name</th>
+                        <th>Order Date</th>
+                        <th>Estimated Delivery</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for misc in misc_entries %}
+                    <tr>
+                        <td>{{ misc.part.part_id }}</td>
+                        <td>{{ misc.part.product_code }}</td>
+                        <td>{{ misc.part.product_code.product_description }}</td>
+                        <td>{{ misc.part.sage_order_number.sage_order_number }}</td>
+                        <td>{{ misc.part.sage_order_number.customer.name }}</td>
+                        <td>{{ misc.part.sage_order_number.order_date }}</td>
+                        <td>{{ misc.part.sage_order_number.estimated_delivery }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+
+        <!-- Unassigned Parts Table -->
+        <div id="unassigned-parts-table">
+            <h3>Unassigned Parts</h3>
+            <table id="unassigned-parts">
+                <tr>
+                    <th>Part ID</th>
+                    <th>Product Code</th>
+                    <th>Product Description</th>
+                    <th>Sage Order Number</th>
+                    <th>Customer Name</th>
+                    <th>Order Date</th>
+                    <th>Estimated Delivery</th>
+                    <!-- Add more headers as needed -->
+                </tr>
+                <tbody>
+                    {% for part in unassigned_parts %}
+                    <tr>
+                        <td>{{ part.part_id }}</td>
+                        <td>{{ part.product_code }}</td>
+                        <td>{{ part.product_code.product_description }}</td>
+                        <td>{{ part.sage_order_number }}</td>
+                        <td>{{ part.sage_order_number.customer.name }}</td>
+                        <td>{{ part.sage_order_number.order_date }}</td>
+                        <td>{{ part.sage_order_number.estimated_delivery }}</td>
+                        <!-- Add more columns as needed -->
+                        <td>
+                            <button class="add-to-misc" data-part-id="{{ part.part_id }}">Add to Misc</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleAddToMiscClick(event) {
+        event.preventDefault();
+        const partId = event.target.dataset.partId;
+
+        // Make sure to replace 'add_to_misc_table' with the correct URL name for adding to the misc table
+        fetch("{% url 'add_to_misc_table' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ partId: partId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Optionally, remove the part row from the HTML or update the UI accordingly
+                event.target.closest('tr').remove();
+                // You might want to add code to refresh the misc table or show a success message
+            } else {
+                // Handle errors, such as displaying an error message to the user
+                console.error('Error:', data.error || 'Failed to add to misc table.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const addToMiscButtons = document.querySelectorAll('.add-to-misc');
+        addToMiscButtons.forEach(button => {
+            button.addEventListener('click', handleAddToMiscClick);
+        });
+    });
+</script>
+
+{% endblock %}

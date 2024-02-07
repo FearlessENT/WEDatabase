@@ -1457,3 +1457,73 @@ def upholstery_department(request):
 
     return render(request, 'upholstery/upholstery_department.html')
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from .models import MiscTable  # Import the MiscTable model
+from django.http import JsonResponse
+@login_required
+@user_passes_test(is_job)
+def assign_misc_parts(request):
+    # Get items from MiscTable
+    misc_entries = MiscTable.objects.all()
+    misc_part_ids = MiscTable.objects.values_list('part__part_id', flat=True)
+
+    # Get unassigned parts excluding those that are in misc_part_ids
+    unassigned_parts = Part.objects.filter(job__isnull=True).exclude(part_id__in=misc_part_ids)
+
+
+    return render(request, 'management/assign_misc_parts.html', {
+        'misc_entries': misc_entries,
+        'unassigned_parts': unassigned_parts,
+    })
+
+
+
+
+
+
+
+
+
+@csrf_exempt
+@require_POST
+@login_required
+@user_passes_test(lambda u: u.is_staff)  # Example test; adjust as needed
+def add_to_misc_table(request):
+    print("Function running")
+    # Parse JSON data from the request body
+    try:
+        data = json.loads(request.body)
+        part_id = data.get('partId')  # Ensure this matches the key in your AJAX call
+        part = Part.objects.get(pk=part_id)  # Retrieve the Part instance
+        MiscTable.objects.create(part=part)  # Assume MiscTable has a 'part' ForeignKey to Part
+        return JsonResponse({'success': True})
+    except Part.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Part does not exist'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

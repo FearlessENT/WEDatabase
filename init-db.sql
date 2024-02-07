@@ -110,11 +110,24 @@ CREATE TABLE Workshop (
 
 
 
--- Create Profile table linking auth_user to CNCMachineDescription
-CREATE TABLE Profile (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNIQUE NOT NULL,
-    cnc_machine_id VARCHAR(255),
-    FOREIGN KEY (user_id) REFERENCES auth_user(id),
-    FOREIGN KEY (cnc_machine_id) REFERENCES CNCMachineDescription(MachineID)
+-- -- Create Profile table linking auth_user to CNCMachineDescription
+-- CREATE TABLE Profile (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     user_id INT UNIQUE NOT NULL,
+--     cnc_machine_id VARCHAR(255),
+--     FOREIGN KEY (user_id) REFERENCES auth_user(id),
+--     FOREIGN KEY (cnc_machine_id) REFERENCES CNCMachineDescription(MachineID)
+-- );
+
+
+
+
+
+
+
+-- Create the MiscTable table
+CREATE TABLE MiscTable (
+    MiscID INT AUTO_INCREMENT PRIMARY KEY,
+    PartID INT,
+    FOREIGN KEY (PartID) REFERENCES Part(PartID)
 );

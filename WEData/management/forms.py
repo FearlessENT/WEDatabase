@@ -52,3 +52,7 @@ class CreateJobForm(forms.ModelForm):
         self.fields['CNCMachine'].queryset = CNCMachineDescription.objects.all()
         self.fields['CNCMachine'].label_from_instance = lambda obj: "%s" % obj.machine_name
         self.fields['CNCMachine'].empty_label = "Select a machine"
+
+
+
+

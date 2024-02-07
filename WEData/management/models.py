@@ -238,3 +238,22 @@ from django.contrib.auth.models import User
 # def save_user_profile(sender, instance, **kwargs):
 #     if hasattr(instance, 'profile'):
 #         instance.profile.save()
+
+
+
+
+
+
+
+
+
+
+
+class MiscTable(models.Model):
+    part = models.OneToOneField(Part, on_delete=models.CASCADE, primary_key=True, db_column='PartID')
+
+    class Meta:
+        db_table = 'MiscTable'
+
+    def __str__(self):
+        return f"Miscellaneous Part ID: {self.part.part_id}"
