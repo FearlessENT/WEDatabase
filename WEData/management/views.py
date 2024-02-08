@@ -97,6 +97,11 @@ def is_plywood(user):
         return False
 
 
+def is_misc(user):
+    if user.groups.filter(name='Misc').exists() or is_admin(user):
+        return True
+    else:
+        return False
 
 
 
@@ -542,6 +547,7 @@ from django.shortcuts import render, redirect
 from .forms import CreateJobForm
 from .models import Job, Part
 
+
 @login_required
 @user_passes_test(is_job)
 def create_job(request):
@@ -550,9 +556,7 @@ def create_job(request):
         if form.is_valid():
             new_job = form.save()
 
-
             cnc_machine_description = form.cleaned_data.get('CNCMachine')
-
             if cnc_machine_description:
                 new_job.CNCMachine = cnc_machine_description
                 new_job.save()
@@ -575,16 +579,18 @@ def create_job(request):
     else:
         form = CreateJobForm()
 
-    unassigned_parts = Part.objects.filter(job__isnull=True).select_related(
+    # Exclude parts that are in MiscTable from the unassigned parts list
+    misc_part_ids = MiscTable.objects.values_list('part__part_id', flat=True)
+    unassigned_parts = Part.objects.filter(job__isnull=True).exclude(part_id__in=misc_part_ids).select_related(
         'sage_order_number', 
         'sage_order_number__customer', 
-        'product_code'  
+        'product_code'
     )
-    return render(request, 'management/create_job.html', {
-    'form': form,
-    'unassigned_parts': unassigned_parts,
-    })
 
+    return render(request, 'management/create_job.html', {
+        'form': form,
+        'unassigned_parts': unassigned_parts,
+    })
 
 
 
@@ -1156,37 +1162,36 @@ def assembly_department(request):
     assembly_status_filter = request.GET.get('assembly_status', 'all')
     picking_status_filter = request.GET.get('picking_status', 'all')
     sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
-    
-    # Fetch only the 'assembly' workshop types
-    assembly_workshop_type = WorkshopTypes.objects.get(workshop_name="assembly")
-    
-    workshops_query = Workshop.objects.filter(workshop_id=assembly_workshop_type)
+    search_query = request.GET.get('search', '')
+
+    workshops_query = Workshop.objects.filter(workshop_id__workshop_name="assembly")
+
+    if search_query:
+        print("search enabled ", search_query)
+        workshops_query = workshops_query.filter(
+            Q(sage_order_number__delivery_postcode__icontains=search_query) |
+            Q(sage_order_number__sage_order_number__icontains=search_query) |
+            Q(product_code__product_code__icontains=search_query) |
+            Q(product_code__product_description__icontains=search_query)
+        )
+
 
     if sort_order == 'newest':
-        workshops_query = workshops_query.order_by('-id')  # Sort by primary key descending
+        workshops_query = workshops_query.order_by('-id')
     elif sort_order == 'oldest':
-        workshops_query = workshops_query.order_by('id')  # Sort by primary key ascending
-
+        workshops_query = workshops_query.order_by('id')
 
     if assembly_status_filter in ['Built', 'Waiting']:
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
 
     if picking_status_filter == 'not_waiting':
-        # Since there's no direct 'part' field in 'Order', you should use related queries.
-        # This approach assumes that you want to exclude Workshops linked to any Orders that have all parts in 'Waiting' status.
-        # Find Orders that have no parts with 'picking_status' not equal to 'Waiting'.
         orders_with_non_waiting_parts = Order.objects.exclude(part__picking_status='Waiting').values_list('sage_order_number', flat=True)
-
         workshops_query = workshops_query.filter(sage_order_number__in=orders_with_non_waiting_parts)
 
-    
-
-    # Default number of items to display, increment if 'Show More' is clicked
     num_items = int(request.GET.get('num_items', 20))
     if 'show_more' in request.GET:
         num_items += 20
 
-    # Set up pagination
     paginator = Paginator(workshops_query.distinct(), num_items)
     page_obj = paginator.get_page(1)
     
@@ -1194,9 +1199,10 @@ def assembly_department(request):
         'page_obj': page_obj,
         'assembly_status_filter': assembly_status_filter,
         'picking_status_filter': picking_status_filter,
-        'sort_order': sort_order,  # Pass sort_order to the template
-        
+        'sort_order': sort_order,
+        'search_query': search_query,
     })
+
 
 
 
@@ -1484,22 +1490,32 @@ def upholstery_department(request):
 
 
 
-from .models import MiscTable  # Import the MiscTable model
-from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from .models import MiscTable, Part  # Make sure to import the Part model as well
+
+
 @login_required
-@user_passes_test(is_job)
+@user_passes_test(is_misc)
 def assign_misc_parts(request):
-    # Get items from MiscTable
     misc_entries = MiscTable.objects.all()
     misc_part_ids = MiscTable.objects.values_list('part__part_id', flat=True)
-
-    # Get unassigned parts excluding those that are in misc_part_ids
     unassigned_parts = Part.objects.filter(job__isnull=True).exclude(part_id__in=misc_part_ids)
 
+    # Pagination logic
+    num_items = int(request.GET.get('num_items', 20))
+    if 'show_more' in request.GET:
+        num_items += 20
+
+    paginator = Paginator(unassigned_parts, num_items)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'management/assign_misc_parts.html', {
         'misc_entries': misc_entries,
-        'unassigned_parts': unassigned_parts,
+        'page_obj': page_obj,  # Updated context to include page_obj
+        'num_items': num_items  # Include this so the template knows the current count
     })
 
 
@@ -1507,23 +1523,67 @@ def assign_misc_parts(request):
 
 
 
-
-
+from django.http import JsonResponse
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Part, MiscTable  # Adjust the import path as necessary
 
 @csrf_exempt
 @require_POST
 @login_required
-@user_passes_test(lambda u: u.is_staff)  # Example test; adjust as needed
+@user_passes_test(is_misc)
 def add_to_misc_table(request):
-    print("Function running")
-    # Parse JSON data from the request body
     try:
         data = json.loads(request.body)
-        part_id = data.get('partId')  # Ensure this matches the key in your AJAX call
-        part = Part.objects.get(pk=part_id)  # Retrieve the Part instance
-        MiscTable.objects.create(part=part)  # Assume MiscTable has a 'part' ForeignKey to Part
-        return JsonResponse({'success': True})
+        part_id = data.get('partId')
+        part = Part.objects.get(pk=part_id)
+        misc_entry = MiscTable.objects.create(part=part)
+        
+        # Prepare the part details for the response
+        part_details = {
+            'part_id': part.part_id,
+            'product_code': part.product_code.product_code,  # Accessing product_code of the PartDescription model
+            'product_description': part.product_code.product_description,  # Correct way to access product_description
+            'sage_order_number': part.sage_order_number.sage_order_number,
+            'customer_name': part.sage_order_number.customer.name,
+            'order_date': part.sage_order_number.order_date.strftime('%Y-%m-%d'),
+            'estimated_delivery': part.sage_order_number.estimated_delivery_wkc.strftime('%Y-%m-%d'),
+        }
+        return JsonResponse({'success': True, 'part': part_details})
     except Part.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Part does not exist'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import MiscTable
+
+@csrf_exempt
+def remove_from_misc(request, part_id):
+    try:
+        misc_entry = MiscTable.objects.get(part__part_id=part_id)
+        misc_entry.delete()
+        return JsonResponse({'success': True})
+    except MiscTable.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Item does not exist'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+
+
+from django.http import JsonResponse
+from django.core import serializers
+
+@login_required
+def get_unassigned_parts(request):
+    misc_part_ids = MiscTable.objects.values_list('part__part_id', flat=True)
+    unassigned_parts = Part.objects.filter(job__isnull=True).exclude(part_id__in=misc_part_ids)
+    # Serialize the queryset to JSON
+    unassigned_parts_json = serializers.serialize('json', unassigned_parts)
+    return JsonResponse({'unassignedParts': unassigned_parts_json})

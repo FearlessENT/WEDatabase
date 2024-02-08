@@ -58,7 +58,8 @@ urlpatterns = [
     path('assembly/plywood_department/', plywood_department, name='plywood_department'),
     path('assign-misc-parts/', views.assign_misc_parts, name='assign_misc_parts'),
     path('add-to-misc-table/', views.add_to_misc_table, name='add_to_misc_table'),
-    
+    path('remove_from_misc/<int:part_id>/', views.remove_from_misc, name='remove_from_misc'),
+    path('get_unassigned_parts/', views.get_unassigned_parts, name='your_view_for_unassigned_parts'),
 
  
 

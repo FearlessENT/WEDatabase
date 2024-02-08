@@ -257,7 +257,12 @@ table a:hover {
 
 
 
-
+.filter-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
 
 
 /* Container for notes and button */
@@ -461,4 +466,15 @@ textarea.autoresize {
 
 .red-indicator {
     color: red;
+}
+
+
+
+
+
+
+
+
+.highlight {
+    background-color: yellow;
 }

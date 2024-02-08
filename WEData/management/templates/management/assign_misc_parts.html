@@ -31,6 +31,9 @@
                         <td>{{ misc.part.sage_order_number.customer.name }}</td>
                         <td>{{ misc.part.sage_order_number.order_date }}</td>
                         <td>{{ misc.part.sage_order_number.estimated_delivery }}</td>
+                        <td>
+                            <button class="remove-from-misc" data-part-id="{{ misc.part.part_id }}">Remove</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -53,7 +56,7 @@
                     <!-- Add more headers as needed -->
                 </tr>
                 <tbody>
-                    {% for part in unassigned_parts %}
+                    {% for part in page_obj.object_list %}
                     <tr>
                         <td>{{ part.part_id }}</td>
                         <td>{{ part.product_code }}</td>
@@ -74,12 +77,73 @@
     </div>
 </div>
 
+
+
+{% if page_obj.has_next %}
+    <form method="get" action="." id="show-more-form">
+        <input type="hidden" name="num_items" value="{{ num_items }}">
+        <input type="hidden" name="show_more" value="true">
+        <button type="submit" id="show-more">Show More</button>
+    </form>
+{% endif %}
+
+
+
+
 <script>
+    
+
+document.getElementById('show-more').addEventListener('click', function() {
+    localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+});
+
+window.onload = function() {
+    if (localStorage.getItem('scrollPosition')) {
+        window.scrollTo(0, localStorage.getItem('scrollPosition'));
+        localStorage.removeItem('scrollPosition');
+    }
+};
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const removeFromMiscButtons = document.querySelectorAll('.remove-from-misc');
+        removeFromMiscButtons.forEach(button => {
+            button.addEventListener('click', function(event) {
+                const partId = event.target.dataset.partId;
+                fetch(`/management/remove_from_misc/${partId}/`, {  // Adjust the URL as needed
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',  // Ensure CSRF token is included for POST requests
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ partId: partId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the row from the table
+                        event.target.closest('tr').remove();
+                        // Optionally, refresh the "Unassigned Parts Table" or update the UI accordingly
+                        location.reload();
+                    } else {
+                        // Handle errors, such as displaying an error message
+                        console.error('Error:', data.error || 'Failed to remove from misc table.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        });
+    });
+
+
+
+
+
     function handleAddToMiscClick(event) {
         event.preventDefault();
         const partId = event.target.dataset.partId;
 
-        // Make sure to replace 'add_to_misc_table' with the correct URL name for adding to the misc table
+        
         fetch("{% url 'add_to_misc_table' %}", {
             method: 'POST',
             headers: {
@@ -91,9 +155,21 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Optionally, remove the part row from the HTML or update the UI accordingly
+                // Assuming data.part contains the newly added part details
+                const miscTableBody = document.querySelector('#misc-items tbody');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `<td>${data.part.part_id}</td>
+                                    <td>${data.part.product_code}</td>
+                                    <td>${data.part.product_description}</td>
+                                    <td>${data.part.sage_order_number}</td>
+                                    <td>${data.part.customer_name}</td>
+                                    <td>${data.part.order_date}</td>
+                                    <td>${data.part.estimated_delivery}</td>`;
+                miscTableBody.appendChild(newRow);
+
+                // Optionally, remove the part row from the Unassigned Parts Table or update the UI accordingly
                 event.target.closest('tr').remove();
-                // You might want to add code to refresh the misc table or show a success message
+                location.reload();
             } else {
                 // Handle errors, such as displaying an error message to the user
                 console.error('Error:', data.error || 'Failed to add to misc table.');
