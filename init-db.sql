@@ -131,3 +131,18 @@ CREATE TABLE MiscTable (
     PartID INT,
     FOREIGN KEY (PartID) REFERENCES Part(PartID)
 );
+
+
+
+
+CREATE TABLE Upholstery (
+    UpholsteryID INT AUTO_INCREMENT PRIMARY KEY,
+    PartID INT,
+    Comments TEXT,
+    Value DECIMAL(10, 2),
+    PreBookedDate DATE,
+    RoutedDate DATE,
+    AssemblyStatus VARCHAR(255),
+    AssemblyNotes TEXT,
+    FOREIGN KEY (PartID) REFERENCES Part(PartID)
+);

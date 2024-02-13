@@ -5,6 +5,7 @@
 
 <div class="filter-container">
     <!-- Assembly Status Filter Form -->
+    <label> Assembly Status (built, waiting)</label>
     <form method="get" action="." class='filter-form'>
         <select name="assembly_status" onchange="this.form.submit()">
             <option value="all">All Assembly Statuses</option>
@@ -16,6 +17,7 @@
     </form>
     
     <!-- Sorting Filter Form -->
+    <label> Sort by (most recent, oldest) </label>
     <form method="get" action="." class="filter-form">
         <select name="sort_order" onchange="this.form.submit()">
             <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Most Recent</option>
@@ -25,6 +27,14 @@
         <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
       
     </form>
+
+
+    <form method="get" action="" class="search-form">
+        <input type="text" name="search" placeholder="Search term" value="{{ search_query }}">
+        <input type="submit" value="Search">
+        <input type="submit" name="clear" value="Clear">
+    </form>
+    
 
 
 </div>
@@ -49,11 +59,10 @@
     <tbody>
         {% for workshop in page_obj %}
         <tr>
-            <td>{{ workshop.sage_order_number.sage_order_number }}</td>
-            <td>{{ workshop.product_code.product_code }}</td>
-            <td>{{ workshop.sage_order_number.delivery_postcode }}</td>
-            <!-- Assuming there is a relationship to access product description from workshop -->
-            <td>{{ workshop.product_code.product_description }}</td>
+            <td class="searchable">{{ workshop.sage_order_number.sage_order_number }}</td>
+            <td class="searchable">{{ workshop.product_code.product_code }}</td>
+            <td class="searchable">{{ workshop.sage_order_number.delivery_postcode }}</td>
+            <td class="searchable">{{ workshop.product_code.product_description }}</td>
             <td>
                 <div class="notes-container">
                     <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
@@ -102,7 +111,24 @@
 
 
 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
+
+
+
+    $(document).ready(function(){
+        var searchTerm = '{{ search_query|escapejs }}';
+        if(searchTerm) {
+            $("td.searchable").each(function(){
+                var text = $(this).text();
+                var regex = new RegExp('('+searchTerm+')', 'gi');
+                $(this).html(text.replace(regex, "<span class='highlight'>$1</span>"));
+            });
+        }
+    });
+
+
+
     document.getElementById('show-more').addEventListener('click', function() {
         localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
     });

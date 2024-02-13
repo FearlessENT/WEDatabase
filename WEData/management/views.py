@@ -1164,6 +1164,9 @@ def assembly_department(request):
     sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
     search_query = request.GET.get('search', '')
 
+    if 'clear' in request.GET:
+        search_query = ''
+
     workshops_query = Workshop.objects.filter(workshop_id__workshop_name="assembly")
 
     if search_query:
@@ -1357,28 +1360,34 @@ def update_assembly_notes(request):
 
 
 
-
-
-
 @login_required
-@user_passes_test(is_minikitchen) 
+@user_passes_test(is_minikitchen)
 def minikitchen_department(request):
     assembly_status_filter = request.GET.get('assembly_status', 'all')
-
     sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+    search_query = request.GET.get('search', '')  # Retrieve the search query
+
+    if 'clear' in request.GET:
+        search_query = ''
     
     workshop_type = WorkshopTypes.objects.get(workshop_name="Minikitchen")
     workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
 
+    if search_query:
+        workshops_query = workshops_query.filter(
+            Q(sage_order_number__delivery_postcode__icontains=search_query) |
+            Q(sage_order_number__sage_order_number__icontains=search_query) |
+            Q(product_code__product_code__icontains=search_query) |
+            Q(product_code__product_description__icontains=search_query)
+        )
+
     if assembly_status_filter in ['Built', 'Waiting']:
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
 
-
     if sort_order == 'newest':
-        workshops_query = workshops_query.order_by('-id')  # Sort by primary key descending
+        workshops_query = workshops_query.order_by('-id')
     elif sort_order == 'oldest':
-        workshops_query = workshops_query.order_by('id')  # Sort by primary key ascending
-    
+        workshops_query = workshops_query.order_by('id')
 
     num_items = int(request.GET.get('num_items', 20))
     if 'show_more' in request.GET:
@@ -1390,44 +1399,74 @@ def minikitchen_department(request):
     return render(request, 'assembly/minikitchen_department.html', {
         'page_obj': page_obj,
         'assembly_status_filter': assembly_status_filter,
-        'sort_order': sort_order,  # Pass sort_order to the template
+        'sort_order': sort_order,
+        'search_query': search_query,
     })
 
 
 
 
+
+
+
+
+
+
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.db.models import Q
+from .models import Workshop, WorkshopTypes
+from django.contrib.auth.decorators import login_required, user_passes_test
+
 @login_required
-@user_passes_test(is_plywood)
+@user_passes_test(is_plywood)  # Ensure you have an appropriate permission-checking decorator
 def plywood_department(request):
     assembly_status_filter = request.GET.get('assembly_status', 'all')
-
     sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+    search_query = request.GET.get('search', '')  # Retrieve the search query
+
+    if 'clear' in request.GET:
+        search_query = ''
     
     workshop_type = WorkshopTypes.objects.get(workshop_name="Plywood")
     workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
 
+    # Filter based on search query if provided
+    if search_query:
+        workshops_query = workshops_query.filter(
+            Q(sage_order_number__delivery_postcode__icontains=search_query) |
+            Q(sage_order_number__sage_order_number__icontains=search_query) |
+            Q(product_code__product_code__icontains=search_query) |
+            Q(product_code__product_description__icontains=search_query)
+        )
+
+    # Apply filters for assembly status
     if assembly_status_filter in ['Built', 'Waiting']:
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
 
-    
+    # Sorting
     if sort_order == 'newest':
-        workshops_query = workshops_query.order_by('-id')  # Sort by primary key descending
+        workshops_query = workshops_query.order_by('-id')
     elif sort_order == 'oldest':
-        workshops_query = workshops_query.order_by('id')  # Sort by primary key ascending
+        workshops_query = workshops_query.order_by('id')
 
-
+    # Pagination
     num_items = int(request.GET.get('num_items', 20))
     if 'show_more' in request.GET:
         num_items += 20
 
-    paginator = Paginator(workshops_query, num_items)
+    paginator = Paginator(workshops_query.distinct(), num_items)
     page_obj = paginator.get_page(1)
     
     return render(request, 'assembly/plywood_department.html', {
         'page_obj': page_obj,
         'assembly_status_filter': assembly_status_filter,
-        'sort_order': sort_order,  # Pass sort_order to the template
+        'sort_order': sort_order,
+        'search_query': search_query,
     })
+
 
 
 

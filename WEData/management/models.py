@@ -207,42 +207,6 @@ class Workshop(models.Model):
 
 
 
-from django.db import models
-from django.contrib.auth.models import User
-
-# class Profile(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE)
-#     assigned_cnc_machine = models.ForeignKey(CNCMachineDescription, on_delete=models.SET_NULL, null=True)
-
-
-#     class Meta:
-#         db_table = 'management_profile'  # Ensure this matches the actual table name
-
-#     def __str__(self):
-#         return f"{self.user.username}'s Profile"
-
-    
-
-
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
-# from django.contrib.auth.models import User
-# from .models import Profile
-
-# @receiver(post_save, sender=User)
-# def create_user_profile(sender, instance, created, **kwargs):
-#     if created and not instance.is_superuser:  # Check if the user is not an admin
-#         Profile.objects.get_or_create(user=instance)  # Use get_or_create to avoid duplicates
-
-# @receiver(post_save, sender=User)
-# def save_user_profile(sender, instance, **kwargs):
-#     if hasattr(instance, 'profile'):
-#         instance.profile.save()
-
-
-
-
-
 
 
 
@@ -257,3 +221,24 @@ class MiscTable(models.Model):
 
     def __str__(self):
         return f"Miscellaneous Part ID: {self.part.part_id}"
+    
+
+
+
+
+
+class Upholstery(models.Model):
+    upholstery_id = models.AutoField(primary_key=True, db_column='UpholsteryID')
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, db_column='PartID', related_name='upholsteries')
+    comments = models.TextField(db_column='Comments', blank=True, null=True)
+    value = models.CharField(max_length=255, db_column='Value', blank=True, null=True)
+    pre_booked_date = models.DateField(db_column='PreBookedDate', blank=True, null=True)
+    routed_date = models.DateField(db_column='RoutedDate', blank=True, null=True)
+    assembly_status = models.CharField(max_length=255, db_column='AssemblyStatus', blank=True, null=True)
+    assembly_notes = models.TextField(db_column='AssemblyNotes', blank=True, null=True)
+
+    class Meta:
+        db_table = 'Upholstery'
+
+    def __str__(self):
+        return f"Upholstery ID: {self.upholstery_id}"

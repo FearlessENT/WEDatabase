@@ -38,6 +38,7 @@
         <!-- Retain the values of the other filters as hidden fields -->
         <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
         
+        
     </form>
 </div>
 
@@ -46,6 +47,7 @@
 <form method="get" action="" class="search-form">
     <input type="text" name="search" placeholder="Search term" value="{{ search_query }}">
     <input type="submit" value="Search">
+    <input type="submit" name="clear" value="Clear">
 </form>
 
 
