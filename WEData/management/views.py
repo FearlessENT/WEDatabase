@@ -1491,22 +1491,55 @@ def plywood_department(request):
 
 
 
-
-from django.core.paginator import Paginator
-from .models import Workshop, WorkshopTypes, Order, PartDescription
+from django.shortcuts import render
+from .models import Upholstery
 
 @login_required
 @user_passes_test(is_upholstery)
 def upholstery_department(request):
+    assembly_status_filter = request.GET.get('assembly_status', 'all')
+    search_query = request.GET.get('search', '')
+    sort_order = request.GET.get('sort_order', 'newest')
+    num_items = int(request.GET.get('num_items', 20))
+
+    if 'show_more' in request.GET:
+        num_items += 20  # Increment the items
+
+    # Adjusting the query to use 'part__part_id' for sorting
+    upholsteries_query = Upholstery.objects.select_related('part')
+    
+    if assembly_status_filter != 'all':
+        upholsteries_query = upholsteries_query.filter(assembly_status=assembly_status_filter)
+
+    if search_query:
+        upholsteries_query = upholsteries_query.filter(
+            Q(part__product_code__icontains=search_query) |
+            Q(part__sage_order_number__icontains=search_query)
+            # Add other search filters as necessary
+        )
+
+    if sort_order == 'newest':
+        upholsteries_query = upholsteries_query.order_by('-part__part_id')
+    elif sort_order == 'oldest':
+        upholsteries_query = upholsteries_query.order_by('part__part_id')
 
 
-    return render(request, 'upholstery/upholstery_department.html')
+    
+    paginator = Paginator(upholsteries_query, num_items)  # Use the updated num_items
+    page_obj = paginator.get_page(1)  # Always return the first page but with more items
 
 
 
 
+    context = {
+        'page_obj': page_obj,
+        'assembly_status_filter': assembly_status_filter,
+        'search_query': search_query,
+        'sort_order': sort_order,
+        'num_items': num_items,  # Pass the updated num_items back to the template
+    }
 
-
+    return render(request, 'upholstery/upholstery_department.html', context)
 
 
 
@@ -1626,3 +1659,104 @@ def get_unassigned_parts(request):
     # Serialize the queryset to JSON
     unassigned_parts_json = serializers.serialize('json', unassigned_parts)
     return JsonResponse({'unassignedParts': unassigned_parts_json})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Upholstery
+import json
+
+@csrf_exempt
+@login_required
+@user_passes_test(is_upholstery)
+def update_upholstery_assembly_status(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        upholstery_id = data.get('upholstery_id')  # Make sure this matches the data sent from the frontend
+        assembly_status = data.get('assembly_status')
+
+        # Use the correct field name to lookup the Upholstery object
+        upholstery = get_object_or_404(Upholstery, upholstery_id=upholstery_id)
+        upholstery.assembly_status = assembly_status
+        upholstery.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
+
+
+
+
+@login_required
+# Adapt this decorator to your upholstery permission logic
+def update_upholstery_notes(request, upholstery_id):
+    if request.method == 'POST':
+        assembly_notes = request.POST.get('assembly_notes')
+
+        upholstery = get_object_or_404(Upholstery, upholstery_id=upholstery_id)
+        upholstery.assembly_notes = assembly_notes
+        upholstery.save()
+
+        # Redirect back to the referring page
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            # Fallback redirect if referer URL is not available
+            return redirect('upholstery_department')  # Adjust to your actual default redirect URL
+
+    # Optional: Redirect or show an error for non-POST requests
+    return redirect('upholstery_department')
+
+
+
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Upholstery
+
+@login_required
+@user_passes_test(is_upholstery)  # Adapt this to your upholstery permission logic
+def update_upholstery_comments(request, upholstery_id):
+    if request.method == 'POST':
+        upholstery_comments = request.POST.get('upholstery_comments')
+
+        upholstery = get_object_or_404(Upholstery, upholstery_id=upholstery_id)
+        upholstery.comments = upholstery_comments
+        upholstery.save()
+
+        # Redirect back to the referring page
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            # Fallback redirect if referer URL is not available
+            return redirect('upholstery_department')  # Adjust to your actual default redirect URL
+
+    # Optional: Handle non-POST requests or show an error
+    return redirect('upholstery_department')

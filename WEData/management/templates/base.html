@@ -81,23 +81,42 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.autoresize').forEach(function(textarea) {
-        function resizeTextarea() {
-            // Set height to 'auto' to get the correct scrollHeight
-            textarea.style.height = 'auto';
-            // Calculate the height difference which might be caused by border etc.
-            var borderHeight = textarea.offsetHeight - textarea.clientHeight;
-            // Set the height only if the content doesn't fit anymore
-            if (textarea.scrollHeight + borderHeight > textarea.clientHeight) {
-                textarea.style.height = textarea.scrollHeight + 'px';
+        document.querySelectorAll('.autoresize').forEach(function(textarea) {
+            function resizeTextarea() {
+                // Set height to 'auto' to get the correct scrollHeight
+                textarea.style.height = 'auto';
+                // Calculate the height difference which might be caused by border etc.
+                var borderHeight = textarea.offsetHeight - textarea.clientHeight;
+                // Set the height only if the content doesn't fit anymore
+                if (textarea.scrollHeight + borderHeight > textarea.clientHeight) {
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                }
             }
-        }
-        // Initialize resize on page load
-        resizeTextarea();
-        // Apply resizeTextarea on input event
-        textarea.addEventListener('input', resizeTextarea, false);
+            // Initialize resize on page load
+            resizeTextarea();
+            // Apply resizeTextarea on input event
+            textarea.addEventListener('input', resizeTextarea, false);
+        });
     });
-});
+
+
+
+
+
+
+
+    document.getElementById('show-more').addEventListener('click', function() {
+            localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+        });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('scrollPosition') !== null) {
+            window.scrollTo(0, localStorage.getItem('scrollPosition'));
+            localStorage.removeItem('scrollPosition');
+        }
+    });
+
+
 
 </script>
 </html>

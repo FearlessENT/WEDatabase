@@ -60,6 +60,10 @@ urlpatterns = [
     path('add-to-misc-table/', views.add_to_misc_table, name='add_to_misc_table'),
     path('remove_from_misc/<int:part_id>/', views.remove_from_misc, name='remove_from_misc'),
     path('get_unassigned_parts/', views.get_unassigned_parts, name='your_view_for_unassigned_parts'),
+    path('update-upholstery-assembly-status/', views.update_upholstery_assembly_status, name='update_upholstery_assembly_status'),
+    path('management/update-upholstery-notes/<int:upholstery_id>/', views.update_upholstery_notes, name='update_upholstery_notes'),
+    path('management/update-upholstery-comments/<int:upholstery_id>/', views.update_upholstery_comments, name='update_upholstery_comments'),
+
 
  
 

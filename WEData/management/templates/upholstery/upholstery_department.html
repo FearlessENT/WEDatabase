@@ -1,6 +1,212 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<h2>Upholstery Department</h2>
+
+<div class="filter-container">
+    <!-- Upholstery Status Filter Form -->
+    <label>Assembly Status (built, waiting)</label>
+    <form method="get" action="." class='filter-form'>
+        <select name="assembly_status" onchange="this.form.submit()">
+            <option value="all">All Assembly Statuses</option>
+            <option value="Built" {% if assembly_status_filter == 'Built' %}selected{% endif %}>Built</option>
+            <option value="Waiting" {% if assembly_status_filter == 'Waiting' %}selected{% endif %}>Waiting</option>
+        </select>
+    </form>
+
+    <!-- Sorting Filter Form -->
+    <label>Sort by (most recent, oldest)</label>
+    <form method="get" action="." class="filter-form">
+        <select name="sort_order" onchange="this.form.submit()">
+            <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Most Recent</option>
+            <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest</option>
+        </select>
+    </form>
+</div>
+
+<form method="get" action="" class="search-form">
+    <input type="text" name="search" placeholder="Search term" value="{{ search_query }}">
+    <input type="submit" value="Search">
+    <input type="submit" name="clear" value="Clear">
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>Part ID</th>
+            <th>Sage Order Number</th>
+            <th>Product Code</th>
+            <th>Product Description</th>
+            <th>Comments</th>
+            <th>Value</th>
+            <th>Assembly Status</th>
+            <th>Assembly Notes</th>
+            <th>Pre Booked Date</th>
+            <th>Routed Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for upholstery in page_obj %}
+        <tr>
+            <td>{{ upholstery.part.part_id }}</td>
+            <td>{{ upholstery.part.sage_order_number.sage_order_number }}</td>
+            <td>{{ upholstery.part.product_code }}</td>
+            <td>{{ upholstery.part.product_code.product_description }}</td>
+
+            <td>
+                <div class="notes-container">
+                    <form method="post" action="{% url 'update_upholstery_comments' upholstery.upholstery_id %}">
+                        {% csrf_token %}
+                        <textarea name="upholstery_comments" class="autoresize" placeholder="">{{ upholstery.comments|default_if_none:"" }}</textarea>
+                        <input type="hidden" name="upholstery_id" value="{{ upholstery.upholstery_id }}">
+                        <input type="submit" value="Save" class="save-btn">
+                    </form>
+                </div>
+            </td>
+            
+            <td>{{ upholstery.value|default_if_none:"" }}</td>
+            <td>
+                <div class="filter-form">
+                    <form data-upholstery-id="{{ upholstery.upholstery_id }}">
+                        <select name="assembly_status" class="assembly-status-selector">
+                            <option value="Waiting" {% if upholstery.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                            <option value="On Hold" {% if upholstery.assembly_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                            <option value="Printed" {% if upholstery.assembly_status == 'Printed' %}selected{% endif %}>Printed</option>
+                            <option value="Cut" {% if upholstery.assembly_status == 'Cut' %}selected{% endif %}>Cut</option>
+                            <option value="Sewn but needs filling (48 hrs)" {% if upholstery.assembly_status == 'Sewn but needs filling (48 hrs)' %}selected{% endif %}>Sewn but needs filling (48 hrs)</option>
+                            <option value="Sewn but needs frame (48 hrs)" {% if upholstery.assembly_status == 'Sewn but needs frame (48 hrs)' %}selected{% endif %}>Sewn but needs frame (48 hrs)</option>
+                            <option value="Sewn but needs frame (5 Days)" {% if upholstery.assembly_status == 'Sewn but needs frame (5 Days)' %}selected{% endif %}>Sewn but needs frame (5 Days)</option>
+                            <option value="Sewn but needs frame (10 days)" {% if upholstery.assembly_status == 'Sewn but needs frame (10 days)' %}selected{% endif %}>Sewn but needs frame (10 days)</option>
+                            <option value="Goods Ready" {% if upholstery.assembly_status == 'Goods Ready' %}selected{% endif %}>Goods Ready</option>
+                        </select>
+                    </form>
+                </div>
+            </td>
+            
+            <td>
+                <div class="notes-container">
+                    <!-- Adjust the URL name to match the new view for updating upholstery notes -->
+                    <form method="post" action="{% url 'update_upholstery_notes' upholstery.upholstery_id %}">
+                        {% csrf_token %}
+                        <!-- Ensure the textarea name matches what you'll expect in the view -->
+                        <textarea name="assembly_notes" class="autoresize" placeholder="Add notes here">{{ upholstery.assembly_notes|default_if_none:"" }}</textarea>
+                        <input type="hidden" name="upholstery_id" value="{{ upholstery.upholstery_id }}">
+                        <input type="submit" value="Save" class="save-btn">
+                    </form>
+                </div>
+            </td>
+            
+            
+            
+            <td>{{ upholstery.pre_booked_date|date:"Y-m-d"|default_if_none:"" }}</td>
+            <td>{{ upholstery.routed_date|date:"Y-m-d"|default_if_none:"" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+<!-- Pagination and scripts similar to assembly template, adjusted for upholstery context -->
+
+
+
+
+<div class="pagination-container">
+    {% if page_obj.has_next %}
+        <form method="get" action="">
+            <!-- Retain current filters as hidden fields -->
+            <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
+            
+            <!-- Assuming you might have a search query similar to the assembly -->
+            <input type="hidden" name="search" value="{{ search_query }}">
+
+            <!-- Retain the sort order if you have a sorting mechanism -->
+            <input type="hidden" name="sort_order" value="{{ sort_order }}">
+
+            <!-- Increment the number of items displayed -->
+            <input type="hidden" name="num_items" value="{{ page_obj.paginator.per_page|add:20 }}">
+            
+            <!-- Show More button -->
+            <button type="submit" name="show_more" id="show-more" value="True">Show More</button>
+
+            <input type="hidden" name="num_items" value="{{ num_items }}">
+        </form>
+    {% endif %}
+</div>
+
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+
+
+    $(document).ready(function(){
+        var searchTerm = '{{ search_query|escapejs }}';
+        if(searchTerm) {
+            $("td.searchable").each(function(){
+                var text = $(this).text();
+                var regex = new RegExp('('+searchTerm+')', 'gi');
+                $(this).html(text.replace(regex, "<span class='highlight'>$1</span>"));
+            });
+        }
+    });
+
+
+
+
+
+
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.assembly-status-selector').forEach(function(select) {
+            select.addEventListener('change', function() {
+                const form = this.closest('form');
+                const upholsteryId = form.getAttribute('data-upholstery-id');
+                const selectedStatus = this.value;
+
+                fetch(`/management/update-upholstery-assembly-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 'upholstery_id': upholsteryId, 'assembly_status': selectedStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data); // Debugging
+                })
+                .catch(error => {
+                    console.error("Error:", error); // Debugging
+                });
+            });
+        });
+    });
+
+
+    
+    function getCSRFToken() {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            let [key, value] = cookie.trim().split('=');
+            if (key === 'csrftoken') {
+                return value;
+            }
+        }
+        return '';
+    }
+
+
+
+
+</script>
 
 
 
