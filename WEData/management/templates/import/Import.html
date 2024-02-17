@@ -3,5 +3,12 @@
 {% block title %}Import Data{% endblock %}
 
 {% block content %}
-<!-- Content for importing data will go here -->
+<div class="import-form">
+    <form action="{% url 'import_csv' %}" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <label for="file-input">Select CSV file:</label>
+      <input type="file" id="file-input" name="file" accept=".csv" required>
+      <button type="submit">Submit</button>
+    </form>
+</div>
 {% endblock %}

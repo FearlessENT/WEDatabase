@@ -63,6 +63,8 @@ urlpatterns = [
     path('update-upholstery-assembly-status/', views.update_upholstery_assembly_status, name='update_upholstery_assembly_status'),
     path('management/update-upholstery-notes/<int:upholstery_id>/', views.update_upholstery_notes, name='update_upholstery_notes'),
     path('management/update-upholstery-comments/<int:upholstery_id>/', views.update_upholstery_comments, name='update_upholstery_comments'),
+    path('import/', views.import_data, name='import_data'),
+    path('import-csv/', views.import_csv, name='import_csv'),
 
 
  

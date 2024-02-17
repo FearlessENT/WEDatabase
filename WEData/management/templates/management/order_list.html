@@ -76,6 +76,20 @@
 
 
 
+    <label>Sort by (most recent, oldest)</label>
+    <form method="get" action="." class="filter-form">
+        <select name="sort_order" onchange="this.form.submit()">
+            <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Most Recent</option>
+            <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest</option>
+        </select>
+        <!-- Retain the values of the other filters as hidden fields -->
+        <input type="hidden" name="customer_search" value="{{ customer_query }}">
+        <input type="hidden" name="order_search" value="{{ order_query }}">
+        <input type="hidden" name="product_search" value="{{ product_query }}">
+        <input type="hidden" name="job_search" value="{{ job_query }}">
+        <input type="hidden" name="status_filter" value="{{ status_filter }}">
+    </form>
+
 
 
 

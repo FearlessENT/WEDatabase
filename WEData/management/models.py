@@ -215,9 +215,11 @@ class Workshop(models.Model):
 
 class MiscTable(models.Model):
     part = models.OneToOneField(Part, on_delete=models.CASCADE, primary_key=True, db_column='PartID')
+    date_added = models.DateTimeField(auto_now_add=True, db_column = 'date_added')
 
     class Meta:
         db_table = 'MiscTable'
+        ordering = ['-date_added']
 
     def __str__(self):
         return f"Miscellaneous Part ID: {self.part.part_id}"

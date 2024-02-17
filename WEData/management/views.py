@@ -1,5 +1,6 @@
 import json
 from django.shortcuts import render
+
 from .models import Order
 from django.db.models import Q
 
@@ -151,6 +152,8 @@ def order_list(request):
     job_query = request.GET.get('job_search', '')
     status_filter = request.GET.get('status_filter', 'all')  # New status filter
 
+    sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+
     # Fetch orders based on the search criteria
     orders = Order.objects.all()
     if customer_query:
@@ -167,6 +170,13 @@ def order_list(request):
         orders = orders.filter(status='Complete')  # Adjust field and value as per your model
     elif status_filter == 'incomplete':
         orders = orders.exclude(status='Complete')  # Adjust field and value as per your model
+
+
+
+    if sort_order == 'newest':
+        orders = orders.order_by('sage_order_number')  # Assumes 'id' is the primary key
+    elif sort_order == 'oldest':
+        orders = orders.order_by('-sage_order_number')
 
 
     # Pagination setup
@@ -189,7 +199,8 @@ def order_list(request):
         'job_query': job_query,
         'num_orders': num_orders,
         'num_range': num_range,
-        'status_filter': status_filter  # Pass the status filter to the template
+        'status_filter': status_filter,
+        'sort_order': sort_order
     })
 
 
@@ -1490,7 +1501,8 @@ def plywood_department(request):
 
 
 
-
+from django.utils import timezone
+from django.db.models import F, ExpressionWrapper, fields, DateField
 from django.shortcuts import render
 from .models import Upholstery
 
@@ -1505,8 +1517,14 @@ def upholstery_department(request):
     if 'show_more' in request.GET:
         num_items += 20  # Increment the items
 
-    # Adjusting the query to use 'part__part_id' for sorting
-    upholsteries_query = Upholstery.objects.select_related('part')
+   
+    upholsteries_query = Upholstery.objects.select_related('part__sage_order_number').annotate(
+        days_old=ExpressionWrapper(
+            timezone.now().date() - F('part__sage_order_number__order_date'),
+            output_field=fields.DurationField()
+        )
+    )
+    
     
     if assembly_status_filter != 'all':
         upholsteries_query = upholsteries_query.filter(assembly_status=assembly_status_filter)
@@ -1528,7 +1546,7 @@ def upholstery_department(request):
     paginator = Paginator(upholsteries_query, num_items)  # Use the updated num_items
     page_obj = paginator.get_page(1)  # Always return the first page but with more items
 
-
+    
 
 
     context = {
@@ -1571,7 +1589,8 @@ from .models import MiscTable, Part  # Make sure to import the Part model as wel
 @login_required
 @user_passes_test(is_misc)
 def assign_misc_parts(request):
-    misc_entries = MiscTable.objects.all()
+    # Fetch only the 5 most recent misc entries, sorted by date_added
+    misc_entries = MiscTable.objects.all()[:5]
     misc_part_ids = MiscTable.objects.values_list('part__part_id', flat=True)
     unassigned_parts = Part.objects.filter(job__isnull=True).exclude(part_id__in=misc_part_ids)
 
@@ -1586,8 +1605,8 @@ def assign_misc_parts(request):
 
     return render(request, 'management/assign_misc_parts.html', {
         'misc_entries': misc_entries,
-        'page_obj': page_obj,  # Updated context to include page_obj
-        'num_items': num_items  # Include this so the template knows the current count
+        'page_obj': page_obj,
+        'num_items': num_items
     })
 
 
@@ -1611,23 +1630,16 @@ def add_to_misc_table(request):
         data = json.loads(request.body)
         part_id = data.get('partId')
         part = Part.objects.get(pk=part_id)
-        misc_entry = MiscTable.objects.create(part=part)
+        MiscTable.objects.create(part=part)
         
-        # Prepare the part details for the response
-        part_details = {
-            'part_id': part.part_id,
-            'product_code': part.product_code.product_code,  # Accessing product_code of the PartDescription model
-            'product_description': part.product_code.product_description,  # Correct way to access product_description
-            'sage_order_number': part.sage_order_number.sage_order_number,
-            'customer_name': part.sage_order_number.customer.name,
-            'order_date': part.sage_order_number.order_date.strftime('%Y-%m-%d'),
-            'estimated_delivery': part.sage_order_number.estimated_delivery_wkc.strftime('%Y-%m-%d'),
-        }
-        return JsonResponse({'success': True, 'part': part_details})
+        # Since the page will refresh, no need to send back part details
+        return JsonResponse({'success': True})
     except Part.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Part does not exist'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
 
 
 
@@ -1760,3 +1772,153 @@ def update_upholstery_comments(request, upholstery_id):
 
     # Optional: Handle non-POST requests or show an error
     return redirect('upholstery_department')
+
+
+
+
+from django.shortcuts import render
+from django.http import HttpResponse
+import csv
+
+def import_data(request):
+    if request.method == 'POST':
+        csv_file = request.FILES['file']
+        # Assuming you have a model called 'MyModel' to which you want to import CSV data
+        reader = csv.reader(csv_file.read().decode('utf-8').splitlines())
+        for row in reader:
+            # Process the CSV rows and save to your model
+            pass  # Replace with your logic
+        return HttpResponse('Data imported successfully')
+    return render(request, 'import/Import.html')
+
+
+
+def convert_date_format(date):
+  # check if the date is empty
+  if not date:
+    # return None
+    return None
+  # split the date by "/"
+  day, month, year = date.split("/")
+  # join the year, month, and day by "-"
+  new_date = "-".join([year, month, day])
+  # return the new date
+  return new_date
+
+
+
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from django.db import transaction
+
+def import_csv(request):
+    if request.method == 'POST' and 'file' in request.FILES:
+        csv_file = request.FILES['file']
+        # Process your CSV file here
+        csvfile = csv_file.read().decode('utf-8').splitlines()
+
+
+
+
+
+
+        # Temporary storage for customers and orders for console printing
+        temp_customers = {}
+        temp_orders = {}
+        order_values = {}
+
+    
+        reader = csv.DictReader(csvfile)
+        # Validate that 'Dept' is a column in the CSV. If not, print an error message.
+        if 'Dept ' not in reader.fieldnames:
+            raise ValueError("CSV file does not contain 'Dept' column or the column header is misspelled.")
+
+        
+        with transaction.atomic():
+            for row in reader:
+
+                
+
+
+                customer_name = row['Customer']
+                sage_order_number = row['Sales Order']
+                dept = row['Dept ']
+                
+                if dept != 'Default':
+                    # Convert the 'Unit Price' to float and accumulate the total value per order
+                    unit_price_str = row.get('Unit Price', '0').strip()
+                    unit_price = 0.0  # Default value if 'Unit Price' is empty
+                    if unit_price_str:
+                        try:
+                            unit_price = float(unit_price_str)
+                        except ValueError:
+                            # Log the error or handle it as per your application's requirements
+                            print(f"Could not convert {unit_price_str} to float for order {row['Sales Order']}. Defaulting to 0.")
+                    order_values[sage_order_number] = order_values.get(sage_order_number, 0) + unit_price
+                
+                # Check if customer exists, if not create a new one
+                customer, created = Customer.objects.get_or_create(
+                    name=customer_name
+                )
+                # Add to temp_customers for console printing
+                if created:
+                    temp_customers[customer_name] = customer.customer_id
+                
+                # Now, handle the order
+                order_date = row['Order Date']
+                order_date = convert_date_format(order_date)
+                delivery_postcode = row['Delivery Address']
+                customer_postcode = row['Sales Order Address']
+                order_taken_by = row['Order Taken By']
+                estimated_delivery_wkc = row['Despatch By']
+                estimated_delivery_wkc = convert_date_format(estimated_delivery_wkc)
+                # ... Extract other fields as necessary
+
+                total_value = order_values.get(sage_order_number, 0)
+                # Check if order exists, if not create a new one
+                order, created = Order.objects.update_or_create(
+                    sage_order_number=sage_order_number,
+                    defaults={
+                        'customer': customer,
+                        'order_date': order_date,
+                        'delivery_postcode': delivery_postcode,
+                        'customer_postcode': customer_postcode,
+                        'order_taken_by': order_taken_by,
+                        'estimated_delivery_wkc': estimated_delivery_wkc,
+                        'value': total_value,  # Set the total value of parts for the order
+                        # ... Set other fields as necessary
+                    }
+                )
+                # Add to temp_orders for console printing
+                if created:
+                    temp_orders[order.sage_order_number] = {
+                        'customer_id': customer.customer_id,
+                        'order_date': order.order_date,
+                        'value': total_value,  # Use the accumulated total value
+                        # ... Include other fields as necessary
+                    }
+
+
+            # transaction.set_rollback(True)
+
+                        
+        # Print temporary tables to the console
+        print("Temporary Customers Table")
+        for name, id in temp_customers.items():
+            print(f"Customer Name: {name}, Customer ID: {id}")
+
+        print("\nTemporary Orders Table")
+        for order_num, order_data in temp_orders.items():
+            print(f"Order Number: {order_num}, Order Data: {order_data}")
+
+            
+
+
+
+
+
+
+
+        # Redirect or respond after processing
+        return redirect('import_data') 
+    return HttpResponse('Failed to upload file', status=400)

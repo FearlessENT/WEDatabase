@@ -8,7 +8,7 @@
 
         <!-- Miscellaneous Table -->
         <div id="misc-table">
-            <h3>Miscellaneous Table</h3>
+            <h3>Miscellaneous Table (most recently added at the top)</h3>
             <table id="misc-items">
                 <thead>
                     <tr>
@@ -122,8 +122,8 @@ window.onload = function() {
                 .then(data => {
                     if (data.success) {
                         // Remove the row from the table
-                        event.target.closest('tr').remove();
-                        // Optionally, refresh the "Unassigned Parts Table" or update the UI accordingly
+                        // event.target.closest('tr').remove();
+                        
                         location.reload();
                     } else {
                         // Handle errors, such as displaying an error message
@@ -142,9 +142,8 @@ window.onload = function() {
     function handleAddToMiscClick(event) {
         event.preventDefault();
         const partId = event.target.dataset.partId;
-
         
-        fetch("{% url 'add_to_misc_table' %}", {
+        fetch("/management/add-to-misc-table/", {
             method: 'POST',
             headers: {
                 'X-CSRFToken': '{{ csrf_token }}',
@@ -155,29 +154,16 @@ window.onload = function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Assuming data.part contains the newly added part details
-                const miscTableBody = document.querySelector('#misc-items tbody');
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `<td>${data.part.part_id}</td>
-                                    <td>${data.part.product_code}</td>
-                                    <td>${data.part.product_description}</td>
-                                    <td>${data.part.sage_order_number}</td>
-                                    <td>${data.part.customer_name}</td>
-                                    <td>${data.part.order_date}</td>
-                                    <td>${data.part.estimated_delivery}</td>`;
-                miscTableBody.appendChild(newRow);
-
-                // Optionally, remove the part row from the Unassigned Parts Table or update the UI accordingly
-                event.target.closest('tr').remove();
-                location.reload();
+                location.reload(); // Refresh the page on success
             } else {
-                // Handle errors, such as displaying an error message to the user
-                console.error('Error:', data.error || 'Failed to add to misc table.');
+                // Handle failure (e.g., display an error message)
+                console.error('Failed to add to MiscTable:', data.error);
             }
         })
         .catch(error => console.error('Error:', error));
     }
 
+    // Ensure your event listeners are added after the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', function() {
         const addToMiscButtons = document.querySelectorAll('.add-to-misc');
         addToMiscButtons.forEach(button => {

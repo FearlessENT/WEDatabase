@@ -41,6 +41,7 @@
             <th>Value</th>
             <th>Assembly Status</th>
             <th>Assembly Notes</th>
+            <th>Days Old</th>
             <th>Pre Booked Date</th>
             <th>Routed Date</th>
         </tr>
@@ -97,7 +98,9 @@
             </td>
             
             
-            
+            <td>{{ upholstery.days_old.days }}</td>
+
+
             <td>{{ upholstery.pre_booked_date|date:"Y-m-d"|default_if_none:"" }}</td>
             <td>{{ upholstery.routed_date|date:"Y-m-d"|default_if_none:"" }}</td>
         </tr>
@@ -107,8 +110,6 @@
 
 
 
-<!-- Pagination and scripts similar to assembly template, adjusted for upholstery context -->
-
 
 
 
@@ -117,17 +118,9 @@
         <form method="get" action="">
             <!-- Retain current filters as hidden fields -->
             <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
-            
-            <!-- Assuming you might have a search query similar to the assembly -->
             <input type="hidden" name="search" value="{{ search_query }}">
-
-            <!-- Retain the sort order if you have a sorting mechanism -->
             <input type="hidden" name="sort_order" value="{{ sort_order }}">
-
-            <!-- Increment the number of items displayed -->
             <input type="hidden" name="num_items" value="{{ page_obj.paginator.per_page|add:20 }}">
-            
-            <!-- Show More button -->
             <button type="submit" name="show_more" id="show-more" value="True">Show More</button>
 
             <input type="hidden" name="num_items" value="{{ num_items }}">
