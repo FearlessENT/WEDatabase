@@ -113,6 +113,8 @@ class Part(models.Model):
     machine_status = models.CharField(max_length=255, db_column='MachineStatus')
     picking_status = models.CharField(max_length=255, db_column='PickingStatus')
     assembly_status = models.CharField(max_length=255, db_column='AssemblyStatus')
+    sage_comment1 = models.TextField(db_column='SageComment1', blank=True, null=True)  # Added field
+    sage_comment2 = models.TextField(db_column='SageComment2', blank=True, null=True)  # Added field
     job = models.ForeignKey(Job, on_delete=models.CASCADE, db_column='JOBID')
 
     class Meta:
@@ -233,6 +235,7 @@ class Upholstery(models.Model):
     upholstery_id = models.AutoField(primary_key=True, db_column='UpholsteryID')
     part = models.ForeignKey(Part, on_delete=models.CASCADE, db_column='PartID', related_name='upholsteries')
     comments = models.TextField(db_column='Comments', blank=True, null=True)
+    comment2 = models.TextField(db_column='Comment2', blank=True, null=True)  # Added field
     value = models.CharField(max_length=255, db_column='Value', blank=True, null=True)
     pre_booked_date = models.DateField(db_column='PreBookedDate', blank=True, null=True)
     routed_date = models.DateField(db_column='RoutedDate', blank=True, null=True)

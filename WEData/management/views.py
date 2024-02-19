@@ -1167,21 +1167,24 @@ from .models import Workshop, WorkshopTypes
 
 
 
+from django.db.models import Prefetch, Q
+
 @login_required
 @user_passes_test(is_assembly)
 def assembly_department(request):
     assembly_status_filter = request.GET.get('assembly_status', 'all')
     picking_status_filter = request.GET.get('picking_status', 'all')
-    sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+    sort_order = request.GET.get('sort_order', 'newest')
     search_query = request.GET.get('search', '')
 
     if 'clear' in request.GET:
         search_query = ''
 
+    # Start with the base query for workshops
     workshops_query = Workshop.objects.filter(workshop_id__workshop_name="assembly")
 
+    # Apply search filter
     if search_query:
-        print("search enabled ", search_query)
         workshops_query = workshops_query.filter(
             Q(sage_order_number__delivery_postcode__icontains=search_query) |
             Q(sage_order_number__sage_order_number__icontains=search_query) |
@@ -1189,26 +1192,46 @@ def assembly_department(request):
             Q(product_code__product_description__icontains=search_query)
         )
 
+    # Apply assembly status filter
+    if assembly_status_filter != 'all':
+        workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
 
+    # Apply sorting
     if sort_order == 'newest':
         workshops_query = workshops_query.order_by('-id')
     elif sort_order == 'oldest':
         workshops_query = workshops_query.order_by('id')
 
-    if assembly_status_filter in ['Built', 'Waiting']:
-        workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+    # Apply prefetching with correct filtering for unique jobs
+    workshops_query = workshops_query.prefetch_related(
+        Prefetch('sage_order_number__part_set__job', queryset=Job.objects.all().distinct()),
+        Prefetch('sage_order_number__part_set__job__pickingprocess_set', queryset=PickingProcess.objects.all())
+    )
 
-    if picking_status_filter == 'not_waiting':
-        orders_with_non_waiting_parts = Order.objects.exclude(part__picking_status='Waiting').values_list('sage_order_number', flat=True)
-        workshops_query = workshops_query.filter(sage_order_number__in=orders_with_non_waiting_parts)
-
+    # Pagination
     num_items = int(request.GET.get('num_items', 20))
     if 'show_more' in request.GET:
         num_items += 20
 
+    # Pagination setup...
     paginator = Paginator(workshops_query.distinct(), num_items)
-    page_obj = paginator.get_page(1)
-    
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    # Prepare unique jobs for each workshop
+    for workshop in page_obj:
+        unique_jobs = {}
+        parts = workshop.sage_order_number.part_set.all()
+        for part in parts:
+            # Check if part has an associated job before accessing it
+            if hasattr(part, 'job') and part.job:
+                job = part.job
+                # Proceed only if the job is not already included
+                if job.job_name not in unique_jobs:
+                    # Check if there's at least one picking process associated with the job
+                    picking_status = job.pickingprocess_set.first().picking_status if job.pickingprocess_set.exists() else "No Status"
+                    unique_jobs[job.job_name] = picking_status
+        workshop.unique_jobs_details = [{'job_name': k, 'picking_status': v} for k, v in unique_jobs.items()]
+
     return render(request, 'assembly/assembly_department.html', {
         'page_obj': page_obj,
         'assembly_status_filter': assembly_status_filter,
@@ -1490,20 +1513,10 @@ def plywood_department(request):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.paginator import Paginator
+from django.db.models import Sum, Q, F, ExpressionWrapper, fields
 from django.utils import timezone
-from django.db.models import F, ExpressionWrapper, fields, DateField
-from django.shortcuts import render
 from .models import Upholstery
 
 @login_required
@@ -1514,62 +1527,50 @@ def upholstery_department(request):
     sort_order = request.GET.get('sort_order', 'newest')
     num_items = int(request.GET.get('num_items', 20))
 
-    if 'show_more' in request.GET:
-        num_items += 20  # Increment the items
-
-   
     upholsteries_query = Upholstery.objects.select_related('part__sage_order_number').annotate(
         days_old=ExpressionWrapper(
             timezone.now().date() - F('part__sage_order_number__order_date'),
             output_field=fields.DurationField()
         )
     )
-    
-    
-    if assembly_status_filter != 'all':
+
+    # Apply the assembly status filter
+    if assembly_status_filter == 'Built':
+        upholsteries_query = upholsteries_query.filter(assembly_status='Goods Ready')
+    elif assembly_status_filter == 'Waiting':
+        upholsteries_query = upholsteries_query.exclude(assembly_status='Goods Ready')
+    elif assembly_status_filter != 'all':
         upholsteries_query = upholsteries_query.filter(assembly_status=assembly_status_filter)
 
+    # Apply the search query filter
     if search_query:
         upholsteries_query = upholsteries_query.filter(
             Q(part__product_code__icontains=search_query) |
-            Q(part__sage_order_number__icontains=search_query)
-            # Add other search filters as necessary
+            Q(part__sage_order_number__sage_order_number__icontains=search_query)
         )
 
+    # Apply sorting based on the sort_order parameter
     if sort_order == 'newest':
-        upholsteries_query = upholsteries_query.order_by('-part__part_id')
+        upholsteries_query = upholsteries_query.order_by('-upholstery_id')  # Sort by UpholsteryID descending for most recent
     elif sort_order == 'oldest':
-        upholsteries_query = upholsteries_query.order_by('part__part_id')
+        upholsteries_query = upholsteries_query.order_by('upholstery_id')  # Sort by UpholsteryID ascending for oldest
 
+    paginator = Paginator(upholsteries_query, num_items)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    
-    paginator = Paginator(upholsteries_query, num_items)  # Use the updated num_items
-    page_obj = paginator.get_page(1)  # Always return the first page but with more items
-
-    
-
+    # Calculate the total value not built
+    total_value_not_built = upholsteries_query.exclude(assembly_status='Goods Ready').aggregate(total=Sum('value'))['total'] or 0
 
     context = {
         'page_obj': page_obj,
         'assembly_status_filter': assembly_status_filter,
         'search_query': search_query,
         'sort_order': sort_order,
-        'num_items': num_items,  # Pass the updated num_items back to the template
+        'num_items': num_items,
+        'total_value_not_built': total_value_not_built,
     }
 
     return render(request, 'upholstery/upholstery_department.html', context)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1741,6 +1742,38 @@ def update_upholstery_notes(request, upholstery_id):
 
     # Optional: Redirect or show an error for non-POST requests
     return redirect('upholstery_department')
+
+
+
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect
+from .models import Upholstery
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def update_upholstery_comment2(request, upholstery_id):
+    if request.method == 'POST':
+        comment2 = request.POST.get('comment2')
+
+        upholstery = get_object_or_404(Upholstery, upholstery_id=upholstery_id)
+        upholstery.comment2 = comment2
+        upholstery.save()
+
+        # Redirect back to the referring page
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            # Fallback redirect if referer URL is not available
+            return redirect('upholstery_department')  # Adjust to your actual default redirect URL
+
+    # Optional: Redirect or show an error for non-POST requests
+    return redirect('upholstery_department')
+
+
 
 
 

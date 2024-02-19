@@ -80,6 +80,7 @@
                         <select name="assembly_status" class="assembly-status-selector">
                             <option value="Built" {% if workshop.assembly_status == 'Built' %}selected{% endif %}>Built</option>
                             <option value="Waiting" {% if workshop.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                            <option value="In Progress" {% if workshop.assembly_status == 'In Progress' %}selected{% endif %}>In Progress</option>
                         </select>
                     </form>
                 </div>

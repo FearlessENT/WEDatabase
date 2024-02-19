@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}  
 
 {% block content %}
 <h2>Upholstery Department</h2>
@@ -37,8 +38,9 @@
             <th>Sage Order Number</th>
             <th>Product Code</th>
             <th>Product Description</th>
-            <th>Comments</th>
-            <th>Value</th>
+            <th>Comment 1</th>
+            <th>Comment 2</th>
+            <th>Value ({{ total_value_not_built|intcomma }} Outstanding)</th>
             <th>Assembly Status</th>
             <th>Assembly Notes</th>
             <th>Days Old</th>
@@ -59,6 +61,19 @@
                     <form method="post" action="{% url 'update_upholstery_comments' upholstery.upholstery_id %}">
                         {% csrf_token %}
                         <textarea name="upholstery_comments" class="autoresize" placeholder="">{{ upholstery.comments|default_if_none:"" }}</textarea>
+                        <input type="hidden" name="upholstery_id" value="{{ upholstery.upholstery_id }}">
+                        <input type="submit" value="Save" class="save-btn">
+                    </form>
+                </div>
+            </td>
+
+            <td>
+                <div class="notes-container">
+                    <!-- Adapt the action URL to the new view for updating Comment 2 -->
+                    <form method="post" action="{% url 'update_upholstery_comment2' upholstery.upholstery_id %}">
+                        {% csrf_token %}
+                        <!-- Make sure to adjust the textarea name to match the new comment field -->
+                        <textarea name="comment2" class="autoresize" placeholder="">{{ upholstery.comment2|default_if_none:"" }}</textarea>
                         <input type="hidden" name="upholstery_id" value="{{ upholstery.upholstery_id }}">
                         <input type="submit" value="Save" class="save-btn">
                     </form>
@@ -96,6 +111,7 @@
                     </form>
                 </div>
             </td>
+            
             
             
             <td>{{ upholstery.days_old.days }}</td>

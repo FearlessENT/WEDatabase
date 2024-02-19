@@ -525,3 +525,24 @@ cursor: pointer;
 .import-form button:hover {
 background-color: #0056b3;
 }
+
+
+
+
+
+
+
+
+
+
+.picking-status-picked {
+    background-color: #c8e6c9; /* Light green for picked */
+}
+
+.picking-status-on-hold {
+    background-color: #fff9c4; /* Light yellow for on hold */
+}
+
+.picking-status-waiting {
+    background-color: #ffcdd2; /* Light red for waiting */
+}

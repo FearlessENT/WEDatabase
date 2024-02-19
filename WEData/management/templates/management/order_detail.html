@@ -66,6 +66,8 @@
                 <th>Machining Status</th>
                 <th>Picking Status</th>
                 <th>Assembly Status</th>
+                <th>SageComment1</th> 
+                <th>SageComment2</th> 
             </tr>
         </thead>
         <tbody>
@@ -83,6 +85,8 @@
                     <td class="{% if part.machine_status == 'Machined' %}status-green{% elif part.machine_status == 'In Progress' or part.machine_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.machine_status }}</td>
                     <td class="{% if part.picking_status == 'Picked'%}status-green{% elif part.picking_status == 'In Progress' or part.picking_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.picking_status }}</td>
                     <td class="{% if part.assembly_status == 'Built' or part.assembly_status == 'Goods Ready' %}status-green{% elif part.assembly_status == 'In Progress' or part.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.assembly_status }}</td>
+                    <td>{{ part.sage_comment1|default_if_none:"" }}</td> 
+                    <td>{{ part.sage_comment2|default_if_none:"" }}</td> 
                 </tr>
             {% empty %}
                 <tr>

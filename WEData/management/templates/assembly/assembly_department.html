@@ -14,18 +14,20 @@
         </select>
         <!-- Retain the value of the other filter -->
         <input type="hidden" name="picking_status" value="{{ picking_status_filter }}">
+        <input type="hidden" name="sort_order" value="{{ sort_order }}">
+        <input type="hidden" name="search" value="{{ search_query }}">
     </form>
     
     <!-- Picking Status Filter Form -->
-    <label> Picking Status (all picked, in progress) </label>
-    <form method="get" action="." class='filter-form'>
+    <!-- <label> Picking Status (all in progress) </label> -->
+    <!-- <form method="get" action="." class='filter-form'>
         <select name="picking_status" onchange="this.form.submit()">
             <option value="all">All Picking Statuses</option>
             <option value="not_waiting" {% if picking_status_filter == 'not_waiting' %}selected{% endif %}>All Not Waiting</option>
         </select>
-        <!-- Retain the value of the other filter -->
+        
         <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
-    </form>
+    </form> -->
 
     
     <!-- Sorting Filter Form -->
@@ -37,6 +39,8 @@
         </select>
         <!-- Retain the values of the other filters as hidden fields -->
         <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
+        <input type="hidden" name="search" value="{{ search_query }}">
+        
         
         
     </form>
@@ -48,6 +52,8 @@
     <input type="text" name="search" placeholder="Search term" value="{{ search_query }}">
     <input type="submit" value="Search">
     <input type="submit" name="clear" value="Clear">
+    <input type="hidden" name="sort_order" value="{{ sort_order }}">
+    <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
 </form>
 
 
@@ -88,11 +94,28 @@
                         <select name="assembly_status" class="assembly-status-selector">
                             <option value="Built" {% if workshop.assembly_status == 'Built' %}selected{% endif %}>Built</option>
                             <option value="Waiting" {% if workshop.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                            <option value="On Hold" {% if workshop.assembly_status == 'On Hold' %}selected{% endif %}>On Hold</option>
                         </select>
                     </form>
                 </div>
             </td>
-            <td>{{ workshop.sage_order_number.part_set.first.picking_status }}</td>
+            <td>
+                <table class="nested-table">
+                    <!-- Table headers -->
+                    <tbody>
+                        {% for job_detail in workshop.unique_jobs_details %}
+                        <tr class="{% if job_detail.picking_status == 'Picked' %}picking-status-picked
+                                  {% elif job_detail.picking_status == 'On Hold' %}picking-status-on-hold
+                                  {% elif job_detail.picking_status == 'Waiting' %}picking-status-waiting
+                                  {% elif job_detail.picking_status == 'No Status' %}picking-status-waiting
+                                  {% endif %}">
+                            <td>{{ job_detail.job_name }}</td>
+                            <td>{{ job_detail.picking_status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </td>
             
             <!-- Replace 'part_set.first.picking_status' with the correct way to access picking status -->
             <td>
@@ -113,6 +136,9 @@
             
             <!-- Increment the number of items displayed -->
             <input type="hidden" name="num_items" value="{{ page_obj.paginator.per_page|add:20 }}">
+            <input type="hidden" name="sort_order" value="{{ sort_order }}">
+            <input type="hidden" name="search" value="{{ search_query }}">
+            
             
             <!-- Show More button -->
             <button type="submit" id="show-more">Show More</button>
