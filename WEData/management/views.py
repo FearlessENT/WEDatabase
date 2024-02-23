@@ -174,9 +174,9 @@ def order_list(request):
 
 
     if sort_order == 'newest':
-        orders = orders.order_by('sage_order_number')  # Assumes 'id' is the primary key
+        orders = orders.order_by('-sage_order_number')  # Assumes 'id' is the primary key
     elif sort_order == 'oldest':
-        orders = orders.order_by('-sage_order_number')
+        orders = orders.order_by('sage_order_number')
 
 
     # Pagination setup
@@ -281,32 +281,41 @@ def customer_orders(request, customer_id):
 
 
 
-
 from django.shortcuts import render, get_object_or_404
-from .models import Order, Part, Job
+from django.db.models import Prefetch
+from .models import Order, Part, Job, PickingProcess, CNCMachine, Upholstery, Workshop, WorkshopTypes
+
+from .models import Order, Part, Job, PickingProcess, Workshop, Upholstery, WorkshopTypes
 
 @login_required
 @user_passes_test(is_orders)
 def order_detail(request, sage_order_number):
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
-    parts = Part.objects.filter(sage_order_number=sage_order_number).select_related('product_code', 'job')
+    parts = Part.objects.filter(sage_order_number=order).select_related('product_code', 'job')
 
-    # Use the 'user_notes' field to extract the codes
-    if order.order_notes:
-        print(order.order_notes)
-        codes_list = [code.strip() for code in order.order_notes.split(';') if code.strip()]
-        codes = [{'label': c.split(';')[0].strip(), 'value': c.split(':')[1].strip()} for c in codes_list if ':' in c]
-    else:
-        codes = []
+    workshops = {workshop.product_code_id: workshop for workshop in Workshop.objects.filter(sage_order_number=order)}
+    upholsteries = {upholstery.part_id: upholstery for upholstery in Upholstery.objects.filter(part__sage_order_number=order)}
 
-    cleaned_order_value = clean_value(order.value)
+    # Prepare a dictionary to map job IDs to their associated picking statuses
+    picking_statuses = PickingProcess.objects.filter(job__part__sage_order_number=order).values_list('job_id', 'picking_status')
+    picking_status_map = {job_id: status for job_id, status in picking_statuses}
+
+    # Annotate parts with assembly status and picking status
+    for part in parts:
+        # Handle assembly status as before
+        if part.dept.lower() == 'upholstery':
+            part.assembly_status = upholsteries.get(part.id, {}).get('assembly_status', 'N/A')
+        else:
+            workshop = workshops.get(part.product_code_id)
+            part.assembly_status = workshop.assembly_status if workshop else 'N/A'
+
+        # Annotate picking status
+        part.picking_status = picking_status_map.get(part.job_id, 'N/A') if part.job else 'N/A'
 
     return render(request, 'management/order_detail.html', {
         'order': order,
         'parts': parts,
-        'codes': codes
     })
-
 
 
 
@@ -801,6 +810,10 @@ def cnc_operator_jobs(request):
     selected_machine_id = request.GET.get('machine', '')
     # Attempt to get 'num_machines' from the session if not present in the GET request
     num_machines = request.GET.get('num_machines') or request.session.get('num_machines', 20)
+    sort_order = request.GET.get('sort_order', 'newest')
+    search_query = request.GET.get('search', '')
+    if 'clear' in request.GET:
+        search_query = ''
 
     try:
         num_machines = int(request.GET.get('num_machines', 10))
@@ -817,6 +830,18 @@ def cnc_operator_jobs(request):
         machines_query = machines_query.filter(machine_stage='Machined')
     elif machined_status == 'not_machined':
         machines_query = machines_query.exclude(machine_stage='Machined')
+
+
+    if search_query:
+        machines_query = machines_query.filter(job__job_name__icontains=search_query)
+
+
+    # Adjust sorting based on user selection
+    if sort_order == 'newest':
+        machines_query = machines_query.order_by('-cnc_machine_id')  # Assuming 'created_at' is the field to sort by
+    elif sort_order == 'oldest':
+        machines_query = machines_query.order_by('cnc_machine_id')
+
 
     paginator = Paginator(machines_query, num_machines)
     page_number = request.GET.get('page')
@@ -861,7 +886,9 @@ def cnc_operator_jobs(request):
         'all_cnc_machines': all_cnc_machines,
         'selected_machine_id': selected_machine_id,
         'total_mm8_quantity': totals['total_mm8_quantity'],
-        'total_mm18_quantity': totals['total_mm18_quantity']
+        'total_mm18_quantity': totals['total_mm18_quantity'],
+        'sort_order': sort_order,
+        'search_query': search_query
     })
 
 
@@ -1036,35 +1063,46 @@ from django.db.models import Prefetch
 @login_required
 @user_passes_test(is_picking)
 def picking_department(request):
-    picking_status_filter = request.GET.get('picking_status', None)
+    picking_status_filter = request.GET.get('picking_status')
+    sort_order = request.GET.get('sort_order', 'newest')
 
-    # Fetch jobs where either mm8_status or mm18_status is 'Machined'
-    jobs_with_picking = Job.objects.select_related('CNCMachine').filter(
-        Q(mm8_status='Machined') | Q(mm18_status='Machined')
-    )
+    picking_processes = PickingProcess.objects.select_related('job__CNCMachine').all()
 
     # Apply picking status filter if provided
     if picking_status_filter:
-        if picking_status_filter in ['Picked', 'On Hold', 'Waiting']:
-            jobs_with_picking = jobs_with_picking.filter(
-                pickingprocess__picking_status=picking_status_filter
-            )
-        elif picking_status_filter == 'not_picked':
-            jobs_with_picking = jobs_with_picking.exclude(
-                pickingprocess__picking_status='Picked'
-            )
+        if picking_status_filter == 'not_picked':
+            picking_processes = picking_processes.exclude(picking_status='Picked')
+        else:
+            picking_processes = picking_processes.filter(picking_status=picking_status_filter)
+
+    # Adjust the query to sort by the PickingProcess primary key for most recent vs oldest
+    if sort_order == 'newest':
+        picking_processes = picking_processes.order_by('-picking_id')
+    elif sort_order == 'oldest':
+        picking_processes = picking_processes.order_by('picking_id')
 
     # Pagination setup
-    num_jobs = int(request.GET.get('num_jobs', 20))  # Default to 20 jobs per page
-    show_more = request.GET.get('show_more', False)
-    if show_more:
-        num_jobs += 20
+    num_items = int(request.GET.get('num_jobs', 20))  # Adjust parameter name as needed
+    paginator = Paginator(picking_processes, num_items)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    paginator = Paginator(jobs_with_picking, num_jobs)
-    page_obj = paginator.get_page(1)
-
-    context = {'page_obj': page_obj, 'current_filter': picking_status_filter}
+    context = {
+        'page_obj': page_obj,
+        'current_filter': picking_status_filter,
+        'sort_order': sort_order
+    }
     return render(request, 'picking/picking_department.html', context)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1074,11 +1112,10 @@ def picking_department(request):
 def update_picking_status(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        job_id = data.get('job_id')
+        picking_id = data.get('picking_id')  # Updated to use picking_id
         new_status = data.get('picking_status')
 
-        # Assuming each job has one picking process
-        picking_process = get_object_or_404(PickingProcess, job_id=job_id)
+        picking_process = get_object_or_404(PickingProcess, pk=picking_id)  # Updated to fetch by pk
         picking_process.picking_status = new_status
         picking_process.save()
 
@@ -1094,52 +1131,43 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import PickingProcess
 import json
 
+# @csrf_exempt
+# @login_required
+# @user_passes_test(is_picking)
+# def save_picking_notes(request):
+#     if request.method == 'POST':
+#         data = json.loads(request.body)
+#         picking_id = data.get('picking_id')
+#         notes = data.get('notes')
+#         picking_status = data.get('picking_status')
+
+#         picking_process = get_object_or_404(PickingProcess, picking_id=picking_id)
+#         picking_process.notes = notes
+#         picking_process.picking_status = picking_status
+#         picking_process.save()
+
+#         return JsonResponse({'status': 'success'})
+
+#     return JsonResponse({'status': 'error'}, status=400)
+
+
+
+
+
 @csrf_exempt
 @login_required
 @user_passes_test(is_picking)
-def save_picking_notes(request):
+def update_picking_notes(request, picking_id):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        picking_id = data.get('picking_id')
-        notes = data.get('notes')
-        picking_status = data.get('picking_status')
-
-        picking_process = get_object_or_404(PickingProcess, picking_id=picking_id)
-        picking_process.notes = notes
-        picking_process.picking_status = picking_status
-        picking_process.save()
-
-        return JsonResponse({'status': 'success'})
-
-    return JsonResponse({'status': 'error'}, status=400)
-
-
-
-
-
-@csrf_exempt
-@login_required
-@user_passes_test(is_picking)
-def update_picking_notes(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        job_id = data.get('job_id')
-        notes = data.get('notes')
-
-        picking_process = get_object_or_404(PickingProcess, job_id=job_id)
+        picking_process = get_object_or_404(PickingProcess, pk=picking_id)
+        notes = request.POST.get('picking_notes')
         picking_process.notes = notes
         picking_process.save()
+        # Redirect to avoid POST on refresh and provide a success message if needed
+        return redirect('picking_department')  # Replace 'some_view_name' with the name of the view to redirect to
 
-        return JsonResponse({'status': 'success'})
-
-    return JsonResponse({'status': 'error'}, status=400)
-
-
-
-
-
-
-
+    # Handle non-POST request if necessary
+    return redirect('picking_department')  # Redirect or show an error
 
 
 
@@ -1415,8 +1443,12 @@ def minikitchen_department(request):
             Q(product_code__product_description__icontains=search_query)
         )
 
-    if assembly_status_filter in ['Built', 'Waiting']:
-        workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+    if assembly_status_filter == 'Waiting':
+        workshops_query = workshops_query.filter(
+            Q(assembly_status='Waiting') | Q(assembly_status='In Progress')
+        )
+    elif assembly_status_filter == 'Built':
+        workshops_query = workshops_query.filter(assembly_status='Built')
 
     if sort_order == 'newest':
         workshops_query = workshops_query.order_by('-id')
@@ -1476,15 +1508,21 @@ def plywood_department(request):
             Q(product_code__product_description__icontains=search_query)
         )
 
-    # Apply filters for assembly status
-    if assembly_status_filter in ['Built', 'Waiting']:
+    # Apply filters for assembly status, adjust for "Waiting" to include "In Progress"
+    if assembly_status_filter == 'Built':
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
+    elif assembly_status_filter == 'Waiting':
+        # Include both Waiting and In Progress statuses
+        workshops_query = workshops_query.filter(
+            Q(assembly_status='Waiting') | Q(assembly_status='In Progress')
+        )
+
 
     # Sorting
     if sort_order == 'newest':
-        workshops_query = workshops_query.order_by('-id')
-    elif sort_order == 'oldest':
         workshops_query = workshops_query.order_by('id')
+    elif sort_order == 'oldest':
+        workshops_query = workshops_query.order_by('-id')
 
     # Pagination
     num_items = int(request.GET.get('num_items', 20))

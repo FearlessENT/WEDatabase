@@ -186,8 +186,12 @@ table a:hover {
     background-color: orange !important;
 }
 .order-details-table td.status-red {
-    background-color: red !important;
+    background-color: rgb(249, 34, 34) !important;
     color: whitesmoke
+}
+
+.order-details-table td.status-yellow {
+    background-color: orange !important;
 }
 
 
@@ -203,11 +207,14 @@ table a:hover {
     color: black; /* or any other text color that suits */
 }
 .status-red {
-    background-color: red;
+    background-color: rgb(245, 39, 39);
     color: white; /* or any other text color that suits */
 }
 
-
+.status-yellow {
+    background-color: orange;
+    color: black; /* or any other text color that suits */
+}
 
 
 
@@ -545,4 +552,29 @@ background-color: #0056b3;
 
 .picking-status-waiting {
     background-color: #ffcdd2; /* Light red for waiting */
+}
+
+
+
+.picking-status-built {
+    background-color: #c8e6c9; /* Light green for Built */
+}
+
+
+
+
+
+.status-waiting { background-color: #ffcdd2; } /* Red for Waiting */
+.status-complete { background-color: #c8e6c9; } /* Green for Complete */
+.status-other { background-color: #fff9c4; } /* Orange for all other statuses */
+.status-machined { background-color: #c8e6c9; } /* Green for Machined */
+
+
+.status-built {
+    background-color: green; /* Green for Built */
+}
+
+
+.status-onhold {
+    background-color: red; /* Red for On Hold */
 }

@@ -105,18 +105,28 @@
 
 
 
-
-
-
-
-    document.getElementById('show-more').addEventListener('click', function() {
-            localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
-        });
+    // This function saves the current scroll position in localStorage
+    function saveScrollPosition() {
+        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Restore the scroll position if it exists in localStorage
         if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition');
+            window.scrollTo(0, parseInt(localStorage.getItem('scrollPosition'), 10));
+            // Optionally, you can clear the saved position after restoring it
+            // localStorage.removeItem('scrollPosition');
+        }
+
+       
+
+        // Save the scroll position before the page unloads
+        window.addEventListener('beforeunload', saveScrollPosition);
+
+        // Your existing "Show More" button functionality
+        const showMoreButton = document.getElementById('show-more');
+        if (showMoreButton) {
+            showMoreButton.addEventListener('click', saveScrollPosition);
         }
     });
 

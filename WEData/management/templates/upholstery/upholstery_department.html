@@ -152,6 +152,43 @@
 <script>
 
 
+    $(document).ready(function() {
+        function updateBackground() {
+            $('.assembly-status-selector').each(function() {
+                var value = $(this).val();
+                var $td = $(this).closest('td');
+                
+                // Clear previous status classes
+                $td.removeClass('status-waiting status-complete status-other');
+                
+                // Determine and apply the new class
+                if (value === 'Waiting') {
+                    $td.addClass('status-waiting');
+                } else if (value === 'Goods Ready') {
+                    $td.addClass('status-complete');
+                } else {
+                    $td.addClass('status-other');
+                }
+            });
+        }
+
+        // Initial update
+        updateBackground();
+
+        // Update on change
+        $(document).on('change', '.assembly-status-selector', function() {
+            updateBackground();
+        });
+    });
+
+
+
+
+
+
+
+
+
     $(document).ready(function(){
         var searchTerm = '{{ search_query|escapejs }}';
         if(searchTerm) {

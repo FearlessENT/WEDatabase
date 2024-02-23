@@ -72,7 +72,36 @@
         </thead>
         <tbody>
             {% for part in parts %}
+
+
                 <tr>
+                    <td>{{ part.product_code }}</td>
+                    <td>
+                        <a href="{% url 'job_detail' job_id=part.job.job_id %}">{{ part.job.job_name }}</a>
+                    </td>
+                    <td>{{ part.dept }}</td>
+                    <td class="{% if part.cnc_status == 'Ready' %}status-green{% elif part.cnc_status == 'In Progress' %}status-yellow{% else %}status-red{% endif %}">
+                        {{ part.cnc_status }}
+                    </td>
+                    <td class="{% if part.picking_status == 'Picked' %}status-green{% elif part.picking_status == 'In Progress' or part.picking_status == 'On Hold' %}status-yellow{% else %}status-red{% endif %}">
+                        {{ part.picking_status }}
+                    </td>
+                    <td class="{% if part.assembly_status == 'Built' or part.assembly_status == 'Goods Ready' %}status-green{% elif part.assembly_status == 'In Progress' %}status-yellow{% else %}status-red{% endif %}">
+                        {{ part.assembly_status }}
+                    </td>
+                    <td>{{ part.sage_comment1|default_if_none:"N/A" }}</td>
+                    <td>{{ part.sage_comment2|default_if_none:"N/A" }}</td>
+                </tr>
+                
+
+
+
+
+
+
+
+
+                <!-- <tr>
                     <td>{{ part.product_code }}</td>
                     <td>
                         {% if part.job %}
@@ -87,7 +116,7 @@
                     <td class="{% if part.assembly_status == 'Built' or part.assembly_status == 'Goods Ready' %}status-green{% elif part.assembly_status == 'In Progress' or part.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.assembly_status }}</td>
                     <td>{{ part.sage_comment1|default_if_none:"" }}</td> 
                     <td>{{ part.sage_comment2|default_if_none:"" }}</td> 
-                </tr>
+                </tr> -->
             {% empty %}
                 <tr>
                     <td colspan="6">No parts found for this order.</td>

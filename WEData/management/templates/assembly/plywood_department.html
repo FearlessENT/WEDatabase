@@ -116,6 +116,51 @@
 <script>
 
 
+    $(document).ready(function() {
+        function updateBackgroundColor($selector) {
+            var status = $selector.val();
+            var $td = $selector.closest('td'); // Find the closest td ancestor
+
+            // Remove all previous status classes
+            $td.removeClass('picking-status-built picking-status-waiting picking-status-in-progress');
+
+            // Add the new status class based on the selected option
+            switch(status) {
+                case 'Built':
+                    $td.addClass('picking-status-built');
+                    break;
+                case 'Waiting':
+                    $td.addClass('picking-status-waiting');
+                    break;
+                case 'In Progress':
+                    $td.addClass('picking-status-in-progress');
+                    break;
+            }
+        }
+
+        $('.assembly-status-selector').change(function() {
+            updateBackgroundColor($(this));
+        });
+
+        // Set initial background color for each dropdown
+        $('.assembly-status-selector').each(function() {
+            updateBackgroundColor($(this));
+        });
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     $(document).ready(function(){
         var searchTerm = '{{ search_query|escapejs }}';
@@ -128,18 +173,6 @@
         }
     });
 
-
-
-    document.getElementById('show-more').addEventListener('click', function() {
-        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition');
-        }
-    });
 
 
 

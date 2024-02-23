@@ -14,6 +14,8 @@
         </select>
         <!-- Retain the value of the other filter -->
         <input type="hidden" name="picking_status" value="{{ picking_status_filter }}">
+       
+        <input type="hidden" name="search" value="{{ search_query }}">
     </form>
 
     <!-- Sorting Filter Form -->
@@ -26,6 +28,7 @@
         <!-- Retain the values of the other filters as hidden fields -->
         <input type="hidden" name="assembly_status" value="{{ assembly_status_filter }}">
         
+        <input type="hidden" name="search" value="{{ search_query }}">
     </form>
 
 
@@ -72,6 +75,7 @@
                         <input type="hidden" name="workshop_id" value="{{ workshop.id }}">
                         <input type="submit" value="Save" class="save-btn">
                     </form>
+                    <input type="hidden" name="search" value="{{ search_query }}">
                 </div>
             </td>
             
@@ -83,6 +87,7 @@
                             <option value="Waiting" {% if workshop.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
                             <option value="In Progress" {% if workshop.assembly_status == 'In Progress' %}selected{% endif %}>In Progress</option>
                         </select>
+                        <input type="hidden" name="search" value="{{ search_query }}">
                     </form>
                 </div>
             </td>
@@ -107,6 +112,7 @@
             
             <!-- Show More button -->
             <button type="submit" id="show-more">Show More</button>
+            <input type="hidden" name="search" value="{{ search_query }}">
         </form>
     {% endif %}
 </div>
@@ -114,6 +120,47 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
+
+$(document).ready(function() {
+    function updateCellBackgroundClass(selector) {
+        selector.each(function() {
+            var status = $(this).val();
+            var cell = $(this).closest('td'); // Find the closest <td> ancestor
+            // Remove all previous classes to prevent style conflicts
+            cell.removeClass('picking-status-picked picking-status-on-hold picking-status-waiting');
+            switch(status) {
+                case 'Built':
+                    cell.addClass('picking-status-picked'); // Apply class for Built
+                    break;
+                case 'Waiting':
+                    cell.addClass('picking-status-waiting'); // Apply class for Waiting
+                    break;
+                case 'In Progress':
+                    cell.addClass('picking-status-on-hold'); // Assuming In Progress uses the on-hold color
+                    break;
+            }
+        });
+    }
+
+    // Apply initial cell background class
+    updateCellBackgroundClass($('.assembly-status-selector'));
+
+    // Update cell background class on dropdown change
+    $(document).on('change', '.assembly-status-selector', function() {
+        updateCellBackgroundClass($(this));
+    });
+});
+
+
+
+
+
+
+
+
+
+
+
 
 
     $(document).ready(function(){
@@ -131,16 +178,11 @@
 
 
 
-    document.getElementById('show-more').addEventListener('click', function() {
-        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
-    });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition');
-        }
-    });
+
+
+
+
 
 
 

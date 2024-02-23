@@ -164,20 +164,39 @@ $(document).ready(function(){
 });
 
 
+$(document).ready(function() {
+    // Function to update the background color based on the dropdown value
+    function updateBackgroundColor($selector) {
+        var status = $selector.val();
+        var $td = $selector.closest('td'); // Find the closest td ancestor
 
+        // Remove all previous status classes
+        $td.removeClass('picking-status-picked picking-status-on-hold picking-status-waiting');
 
-
-
-    document.getElementById('show-more').addEventListener('click', function() {
-        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition');
+        // Add the new status class based on the selected option
+        switch(status) {
+            case 'Built':
+                $td.addClass('picking-status-picked');
+                break;
+            case 'On Hold':
+                $td.addClass('picking-status-on-hold');
+                break;
+            case 'Waiting':
+                $td.addClass('picking-status-waiting');
+                break;
         }
+    }
+
+    // Attach change event listener to all dropdowns
+    $('.assembly-status-selector').change(function() {
+        updateBackgroundColor($(this));
     });
+
+    // Set initial background color for each dropdown
+    $('.assembly-status-selector').each(function() {
+        updateBackgroundColor($(this));
+    });
+});
 
 
 

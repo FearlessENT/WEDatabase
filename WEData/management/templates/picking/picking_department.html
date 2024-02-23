@@ -8,16 +8,26 @@
 
 
 
-
+    <label>Picking Status (picked, not picked)</label>
     <form method="get" action="{% url 'picking_department' %}" class='filter-form'>
         <select name="picking_status" onchange="this.form.submit()">
             <option value="">All</option>
             <option value="Picked" {% if current_filter == 'Picked' %}selected{% endif %}>Picked</option>
             <option value="On Hold" {% if current_filter == 'On Hold' %}selected{% endif %}>On Hold</option>
             <option value="Waiting" {% if current_filter == 'Waiting' %}selected{% endif %}>Waiting</option>
-            <option value="not_picked" {% if current_filter == 'not_picked' %}selected{% endif %}>All Not Picked</option>
+            <option value="not_picked" {% if current_filter == 'not_picked' %}selected{% endif %}>All In Progress</option>
             
         </select>
+        <input type="hidden" name="sort_order" value="{{ sort_order }}">
+    </form>
+
+    <label>Sort by (most recent, oldest)</label>
+    <form method="get" action="." class="filter-form">
+        <select name="sort_order" onchange="this.form.submit()">
+            <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Most Recent</option>
+            <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest</option>
+        </select>
+        <input type="hidden" name="picking_status" value="{{ current_filter }}">
     </form>
 </div>
 
@@ -33,44 +43,45 @@
         </tr>
     </thead>
     <tbody>
-        {% for job in page_obj %}
+        {% for picking in page_obj %}
         <tr>
-            <td>{{ job.job_name }}</td>
-            <td>{{ job.CNCMachine.machine_name }}</td>
+            <td>{{ picking.job.job_name }}</td>
+            <td>{{ picking.job.CNCMachine.machine_name }}</td>
             
-            <td>
-                {% if job.mm18_status %}
-                    {{ job.mm18_status }}
-                {% else %}
-                    N/A
-                {% endif %}
+            <td class="{% if picking.job.mm18_status == 'Waiting' %}status-waiting
+                    {% elif picking.job.mm18_status == 'Machined' %}status-machined
+                    {% else %}status-other{% endif %}">
+                {% if picking.job.mm18_status %}{{ picking.job.mm18_status }}{% else %}N/A{% endif %}
             </td>
-            <td>
-                {% if job.mm8_status %}
-                    {{ job.mm8_status }}
-                {% else %}
-                    N/A
-                {% endif %}
+            <td class="{% if picking.job.mm8_status == 'Waiting' %}status-waiting
+                    {% elif picking.job.mm8_status == 'Machined' %}status-machined
+                    {% else %}status-other{% endif %}">
+                {% if picking.job.mm8_status %}{{ picking.job.mm8_status }}{% else %}N/A{% endif %}
             </td>
             <td>
                 <div class="filter-form">
-                    {% for picking in job.pickingprocess_set.all %}
-                    <select name="picking_status" data-job-id="{{ job.job_id }}" onchange="updatePickingStatus(this)">
-                        <option value="Picked" {% if job.pickingprocess_set.first.picking_status == 'Picked' %}selected{% endif %}>Picked</option>
-                        <option value="On Hold" {% if job.pickingprocess_set.first.picking_status == 'On Hold' %}selected{% endif %}>On Hold</option>
-                        <option value="Waiting" {% if job.pickingprocess_set.first.picking_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                    <select name="picking_status" data-picking-id="{{ picking.picking_id }}" onchange="updatePickingStatus(this)">
+                        <option value="Picked" {% if picking.picking_status == 'Picked' %}selected{% endif %}>Picked</option>
+                        <option value="On Hold" {% if picking.picking_status == 'On Hold' %}selected{% endif %}>On Hold</option>
+                        <option value="Waiting" {% if picking.picking_status == 'Waiting' %}selected{% endif %}>Waiting</option>
                     </select>
-                    {% endfor %}
                 </div>
             </td>
+            
             <td>
                 <div class="notes-container">
-                    <form class="picking-notes-form" data-job-id="{{ job.job_id }}">
-                        <textarea name="picking_notes" class="autoresize" placeholder="Add notes here">{{ job.pickingprocess_set.first.notes|default_if_none:"" }}</textarea>
-                        <button type="button" onclick="savePickingNotes(this)" class="save-btn">Save</button>
+                    <!-- Use the Django URL template tag to generate the correct URL for the form action -->
+                    <form method="post" action="{% url 'update_picking_notes' picking.picking_id %}">
+                        {% csrf_token %}
+                        <!-- Name the textarea according to what your view expects -->
+                        <textarea name="picking_notes" class="autoresize" placeholder="Add notes here">{{ picking.notes|default_if_none:"" }}</textarea>
+                        <!-- Use a hidden input to pass the picking_id -->
+                        <input type="hidden" name="picking_id" value="{{ picking.picking_id }}">
+                        <input type="submit" value="Save" class="save-btn">
                     </form>
                 </div>
             </td>
+            
             
         </tr>
         {% endfor %}
@@ -86,47 +97,82 @@
 
     <!-- Show More button -->
     <button type="submit" id="show-more">Show More</button>
+    <input type="hidden" name="sort_order" value="{{ sort_order }}">
 </form>
 
 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
-    // Script to store the scroll position
-    document.getElementById('show-more').addEventListener('click', function() {
-        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
+
+
+
+    $(document).ready(function() {
+        function updatePickingCellBackgroundClass(selector) {
+            selector.each(function() {
+                var status = $(this).val();
+                var cell = $(this).closest('td'); // Find the closest <td> ancestor
+                // Remove all previous classes to prevent style conflicts
+                cell.removeClass('picking-status-picked picking-status-on-hold picking-status-waiting');
+                switch(status) {
+                    case 'Picked':
+                        cell.addClass('picking-status-picked'); // Apply class for Picked
+                        break;
+                    case 'On Hold':
+                        cell.addClass('picking-status-on-hold'); // Apply class for On Hold
+                        break;
+                    case 'Waiting':
+                        cell.addClass('picking-status-waiting'); // Apply class for Waiting
+                        break;
+                }
+            });
+        }
+
+        // Target the picking_status dropdowns specifically
+        var pickingStatusDropdowns = $('select[name="picking_status"]');
+        
+        // Apply initial cell background class
+        updatePickingCellBackgroundClass(pickingStatusDropdowns);
+
+        // Update cell background class on dropdown change
+        pickingStatusDropdowns.change(function() {
+            updatePickingCellBackgroundClass($(this));
+        });
     });
 
-    // Script to restore the scroll position
-    document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition'); // Clear the stored position
-        }
-    });
+
+
+
+
+
+
+
+
 
 
     function savePickingNotes(buttonElement) {
         const form = buttonElement.closest('.picking-notes-form');
-        const jobId = form.getAttribute('data-job-id');
+        const pickingId = form.getAttribute('data-picking-id'); // Use data-picking-id
         const notes = form.querySelector('textarea[name="picking_notes"]').value;
 
-        fetch('/management/update_picking_notes/', {
+        fetch('/management/update_picking_notes/', { // Ensure this endpoint exists and is configured correctly
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 'job_id': jobId, 'notes': notes })
+            body: JSON.stringify({ 'picking_id': pickingId, 'notes': notes })
         })
         .then(response => response.json())
         .then(data => {
             console.log("Response received:", data);
-            // Optional: Update UI or display a success message
+            // Optional: Display a success message or update the UI accordingly
         })
         .catch(error => {
             console.error("Error:", error);
             // Optional: Display an error message
         });
     }
+
     function getCSRFToken() {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
@@ -151,7 +197,7 @@
 
 
     function updatePickingStatus(element) {
-        const jobId = element.getAttribute('data-job-id');
+        const pickingId = element.getAttribute('data-picking-id'); // Updated to use picking_id
         const newStatus = element.value;
 
         fetch('/management/update_picking_status/', {
@@ -160,7 +206,7 @@
                 'X-CSRFToken': getCSRFToken(),
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 'job_id': jobId, 'picking_status': newStatus })
+            body: JSON.stringify({ 'picking_id': pickingId, 'picking_status': newStatus })
         })
         .then(response => response.json())
         .then(data => {
@@ -172,6 +218,12 @@
             // Optional: Display an error message
         });
     }
+
+
+
+
+
+
 
     function getCSRFToken() {
         const cookies = document.cookie.split(';');

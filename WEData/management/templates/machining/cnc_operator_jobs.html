@@ -6,7 +6,7 @@
 
 {% block content %}
 
-
+<h2>CNC Machining</h2>
 
 <div class="machine-list">
 
@@ -33,9 +33,53 @@
                 <option value="machined" {% if machined_status == 'machined' %}selected{% endif %}>Machined</option>
                 <option value="not_machined" {% if machined_status == 'not_machined' %}selected{% endif %}>Not Machined</option>
             </select>
+            <input type="hidden" name="search" value="{{ search_query }}">
             <input type="hidden" name="num_machines" value="{{ num_machines }}">
         </form>
+
+  
+        <label>Sort by (most recent, oldest)</label>
+        <form method="get" action="" class="filter-form">
+            <select name="sort_order" onchange="this.form.submit()">
+                <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Most Recent</option>
+                <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest</option>
+            </select>
+            <input type="hidden" name="machined_status" value="{{ machined_status }}">
+            <input type="hidden" name="machine" value="{{ selected_machine_id }}">
+            <input type="hidden" name="num_machines" value="{{ num_machines }}">
+            <input type="hidden" name="search" value="{{ search_query }}">
+        </form>
+        
+
+
+
+
+
+
+
+
+
     </div>
+
+
+
+
+
+
+
+
+
+    <form method="get" action="" class="search-form">
+        <input type="text" name="search" placeholder="Search term" value="{{ search_query }}">
+        <input type="submit" value="Search">
+        <input type="submit" name="clear" value="Clear">
+        <input type="hidden" name="machined_status" value="{{ machined_status }}">
+        <input type="hidden" name="machine" value="{{ selected_machine_id }}">
+        <input type="hidden" name="sort_order" value="{{ sort_order }}">
+        <input type="hidden" name="num_machines" value="{{ num_machines }}">
+    </form>
+    
+    
 
 
 
@@ -122,7 +166,13 @@
                             <textarea name="machine_notes" class="autoresize" placeholder="Add notes here">{{ machine.notes|default_if_none:"" }}</textarea>
                             <input type="submit" value="Save" class="save-btn">
                             <input type="hidden" name="cnc_machine_id" value="{{ machine.cnc_machine_id }}">
+                            <!-- Include these if you want to return to a filtered view after submission -->
+                            <input type="hidden" name="machined_status" value="{{ machined_status }}">
+                            <input type="hidden" name="machine" value="{{ selected_machine_id }}">
+                            <input type="hidden" name="sort_order" value="{{ sort_order }}">
+                            <input type="hidden" name="num_machines" value="{{ num_machines }}">
                         </form>
+                        
                     </div>
                 </td>
                 
@@ -138,22 +188,94 @@
 <div class="pagination-container">
     {% if page_obj.has_next %}
         <form method="get" action="">
-            <!-- Retain current filters as hidden fields -->
             <input type="hidden" name="machined_status" value="{{ machined_status }}">
             <input type="hidden" name="machine" value="{{ selected_machine_id }}">
-            
-            <!-- Increment the number of machines displayed -->
+            <input type="hidden" name="sort_order" value="{{ sort_order }}">
             <input type="hidden" name="num_machines" value="{{ num_machines|add:10 }}">
-            
-            <!-- Show More button -->
             <button type="submit" id="show-more">Show More</button>
+            <input type="hidden" name="search" value="{{ search_query }}">
         </form>
+    
     {% endif %}
 </div>
 
 
-
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
+
+
+
+
+
+
+    $(document).ready(function() {
+        function updateMachineStageBackground() {
+            $('select[name="mm8_machine_stage"], select[name="mm18_machine_stage"]').each(function() {
+                var value = $(this).val();
+                var $td = $(this).closest('td');
+                
+                // Clear previous status classes
+                $td.removeClass('status-waiting status-machined status-other');
+                
+                // Determine and apply the new class
+                if (value === 'Waiting') {
+                    $td.addClass('status-waiting');
+                } else if (value === 'Machined') {
+                    $td.addClass('status-machined');
+                } else {
+                    $td.addClass('status-other');
+                }
+            });
+        }
+
+        // Initial update
+        updateMachineStageBackground();
+
+        // Update on change
+        $(document).on('change', 'select[name="mm8_machine_stage"], select[name="mm18_machine_stage"]', function() {
+            updateMachineStageBackground();
+        });
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    $(document).ready(function() {
+        var searchTerm = '{{ search_query|escapejs }}';
+        if (searchTerm) {
+            $("td.searchable").each(function() {
+                var text = $(this).text();
+                var regex = new RegExp('(' + searchTerm + ')', 'gi');
+                $(this).html(text.replace(regex, "<span class='highlight'>$1</span>"));
+            });
+        }
+    });
+
+
+
+
+
+
+
+
+
+
     // Script for Show More button and maintaining scroll position
     document.getElementById('show-more').addEventListener('click', function() {
         localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
