@@ -58,37 +58,34 @@
     </thead>
     <tbody>
         {% for workshop in page_obj %}
-        <tr>
-            <td class="searchable">{{ workshop.sage_order_number.sage_order_number }}</td>
-            <td class="searchable">{{ workshop.product_code.product_code }}</td>
-            <td class="searchable">{{ workshop.sage_order_number.delivery_postcode }}</td>
-            <td class="searchable">{{ workshop.product_code.product_description }}</td>
-            <td>
-                <div class="notes-container">
-                    <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
-                        {% csrf_token %}
-                        <textarea name="workshop_notes" class="autoresize" placeholder="Add notes here">{{ workshop.notes|default_if_none:"" }}</textarea>
-                        <input type="hidden" name="workshop_id" value="{{ workshop.id }}">
-                        <input type="submit" value="Save" class="save-btn">
-                    </form>
-                </div>
-            </td>
-            <!-- Assuming you can access the picking status from workshop or related order/part -->
-            <td>
-                <div class="filter-form">
-                    <form data-workshop-id="{{ workshop.id }}">
-                        <select name="assembly_status" class="assembly-status-selector">
-                            <option value="Built" {% if workshop.assembly_status == 'Built' %}selected{% endif %}>Built</option>
-                            <option value="Waiting" {% if workshop.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
-                            <option value="In Progress" {% if workshop.assembly_status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                        </select>
-                    </form>
-                </div>
-            </td>
-            
-            
-        
-        </tr>
+            <tr>
+                <!-- Updated to reflect the direct relationship with Part -->
+                <td class="searchable">{{ workshop.part.sage_order_number.sage_order_number }}</td>
+                <td class="searchable">{{ workshop.part.product_code.product_code }}</td>
+                <td class="searchable">{{ workshop.part.sage_order_number.delivery_postcode }}</td>
+                <td class="searchable">{{ workshop.part.product_code.product_description }}</td>
+                <td>
+                    <div class="notes-container">
+                        <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
+                            {% csrf_token %}
+                            <textarea name="workshop_notes" class="autoresize" placeholder="Add notes here">{{ workshop.notes|default_if_none:"" }}</textarea>
+                            <input type="hidden" name="workshop_id" value="{{ workshop.id }}">
+                            <input type="submit" value="Save" class="save-btn">
+                        </form>
+                    </div>
+                </td>
+                <td>
+                    <div class="filter-form">
+                        <form data-workshop-id="{{ workshop.id }}">
+                            <select name="assembly_status" class="assembly-status-selector">
+                                <option value="Built" {% if workshop.assembly_status == 'Built' %}selected{% endif %}>Built</option>
+                                <option value="Waiting" {% if workshop.assembly_status == 'Waiting' %}selected{% endif %}>Waiting</option>
+                                <option value="In Progress" {% if workshop.assembly_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            </select>
+                        </form>
+                    </div>
+                </td>
+            </tr>
         {% endfor %}
     </tbody>
 </table>

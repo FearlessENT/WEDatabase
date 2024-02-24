@@ -196,8 +196,7 @@ class WorkshopTypes(models.Model):
 class Workshop(models.Model):
     id = models.AutoField(primary_key=True)
     workshop_id = models.ForeignKey(WorkshopTypes, on_delete=models.CASCADE, db_column='WorkshopID', related_name='workshops')
-    sage_order_number = models.ForeignKey(Order, on_delete=models.CASCADE, db_column='SageOrderNumber')
-    product_code = models.ForeignKey(PartDescription, on_delete=models.CASCADE, db_column='ProductCode')
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, db_column='PartID')  # New link to Part
     assembly_status = models.CharField(max_length=255, db_column='AssemblyStatus')
     notes = models.TextField(db_column='Notes')
 
@@ -205,9 +204,7 @@ class Workshop(models.Model):
         db_table = 'workshop'
 
     def __str__(self):
-        return f"Workshop ID: {self.workshop_id.workshop_name}"
-
-
+        return f"Workshop ID: {self.workshop_id.workshop_name}, Part ID: {self.part.part_id}"
 
 
 

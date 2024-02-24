@@ -100,14 +100,13 @@ CREATE TABLE WorkshopTypes (
 
 -- Create the Workshop table
 CREATE TABLE Workshop (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     WorkshopID INT,
-    SageOrderNumber INT,
-    ProductCode VARCHAR(255),
+    PartID INT,
     AssemblyStatus VARCHAR(255),
     Notes TEXT,
     FOREIGN KEY (WorkshopID) REFERENCES WorkshopTypes(WorkshopID),
-    FOREIGN KEY (SageOrderNumber) REFERENCES `Order`(SageOrderNumber),
-    FOREIGN KEY (ProductCode) REFERENCES PartDescription(ProductCode)
+    FOREIGN KEY (PartID) REFERENCES Part(PartID)
 );
 
 

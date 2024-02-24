@@ -63,10 +63,11 @@
     <tbody>
         {% for workshop in page_obj %}
         <tr>
-            <td class="searchable">{{ workshop.sage_order_number.sage_order_number }}</td>
-            <td class="searchable">{{ workshop.product_code.product_code }}</td>
-            <td class="searchable">{{ workshop.sage_order_number.delivery_postcode }}</td>
-            <td class="searchable">{{ workshop.product_code.product_description }}</td>
+            <!-- Updated to reflect the direct relationship with Part -->
+            <td class="searchable">{{ workshop.part.sage_order_number.sage_order_number }}</td>
+            <td class="searchable">{{ workshop.part.product_code.product_code }}</td>
+            <td class="searchable">{{ workshop.part.sage_order_number.delivery_postcode }}</td>
+            <td class="searchable">{{ workshop.part.product_code.product_description }}</td>
             <td>
                 <div class="notes-container">
                     <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
@@ -75,7 +76,6 @@
                         <input type="hidden" name="workshop_id" value="{{ workshop.id }}">
                         <input type="submit" value="Save" class="save-btn">
                     </form>
-                    <input type="hidden" name="search" value="{{ search_query }}">
                 </div>
             </td>
             
@@ -91,11 +91,9 @@
                     </form>
                 </div>
             </td>
-            
-            
-       
         </tr>
         {% endfor %}
+
     </tbody>
 </table>
 

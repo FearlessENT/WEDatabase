@@ -57,73 +57,59 @@
     </div>
 
     <h3>Parts in this Order</h3>
-    <table class="order-details-table">
-        <thead>
-            <tr>
-                <th>Product Code</th>
-                <th>Job</th>
-                <th>Department</th>
-                <th>Machining Status</th>
-                <th>Picking Status</th>
-                <th>Assembly Status</th>
-                <th>SageComment1</th> 
-                <th>SageComment2</th> 
-            </tr>
-        </thead>
-        <tbody>
-            {% for part in parts %}
-
-
-                <tr>
-                    <td>{{ part.product_code }}</td>
-                    <td>
-                        <a href="{% url 'job_detail' job_id=part.job.job_id %}">{{ part.job.job_name }}</a>
-                    </td>
-                    <td>{{ part.dept }}</td>
-                    <td class="{% if part.cnc_status == 'Ready' %}status-green{% elif part.cnc_status == 'In Progress' %}status-yellow{% else %}status-red{% endif %}">
-                        {{ part.cnc_status }}
-                    </td>
-                    <td class="{% if part.picking_status == 'Picked' %}status-green{% elif part.picking_status == 'In Progress' or part.picking_status == 'On Hold' %}status-yellow{% else %}status-red{% endif %}">
-                        {{ part.picking_status }}
-                    </td>
-                    <td class="{% if part.assembly_status == 'Built' or part.assembly_status == 'Goods Ready' %}status-green{% elif part.assembly_status == 'In Progress' %}status-yellow{% else %}status-red{% endif %}">
-                        {{ part.assembly_status }}
-                    </td>
-                    <td>{{ part.sage_comment1|default_if_none:"N/A" }}</td>
-                    <td>{{ part.sage_comment2|default_if_none:"N/A" }}</td>
-                </tr>
-                
-
-
-
-
-
-
-
-
-                <!-- <tr>
-                    <td>{{ part.product_code }}</td>
-                    <td>
-                        {% if part.job %}
-                        <a href="{% url 'job_detail' job_id=part.job.job_id %}">{{ part.job.job_name }}</a>
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </td>
-                    <td>{{ part.dept }}</td>
-                    <td class="{% if part.machine_status == 'Machined' %}status-green{% elif part.machine_status == 'In Progress' or part.machine_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.machine_status }}</td>
-                    <td class="{% if part.picking_status == 'Picked'%}status-green{% elif part.picking_status == 'In Progress' or part.picking_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.picking_status }}</td>
-                    <td class="{% if part.assembly_status == 'Built' or part.assembly_status == 'Goods Ready' %}status-green{% elif part.assembly_status == 'In Progress' or part.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">{{ part.assembly_status }}</td>
-                    <td>{{ part.sage_comment1|default_if_none:"" }}</td> 
-                    <td>{{ part.sage_comment2|default_if_none:"" }}</td> 
-                </tr> -->
-            {% empty %}
-                <tr>
-                    <td colspan="6">No parts found for this order.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+    <table>
+        <tr>
+            <th>Product Code</th>
+            <th>Department</th>
+            <th>Assembly Status</th>
+            <th>Comments</th>
+            <th>Job Number</th>
+            <th>Machining Status</th>
+            <th>Picking Status</th>
+        </tr>
+        {% for part in parts %}
+        <tr>
+            <td>{{ part.product_code.product_code }}</td>
+            <td>{{ part.dept }}</td>
+            <td class="{% if part.dept.lower == 'upholstery' and part.upholsteries.first.assembly_status == 'Complete' %}status-complete
+                        {% elif part.dept.lower == 'upholstery' and part.upholsteries.first.assembly_status == 'Waiting' %}status-waiting
+                        {% else %}status-other{% endif %}">
+                {% if part.dept.lower == "upholstery" %}
+                    {{ part.upholsteries.first.assembly_status }}
+                {% else %}
+                    {{ part.assembly_status }}
+                {% endif %}
+            </td>
+            <td>
+                {% if part.dept.lower == "upholstery" %}
+                    {{ part.upholsteries.first.comments|default:"N/A" }}<br>
+                    {{ part.upholsteries.first.comment2|default:"N/A" }}
+                {% else %}
+                    {{ part.sage_comment1|default:"N/A" }}<br>
+                    {{ part.sage_comment2|default:"N/A" }}
+                {% endif %}
+            </td>
+            <td>
+                {% if part.dept.lower == "assembly" %}
+                    {{ part.job.job_id }}
+                {% endif %}
+            </td>
+            <td class="{% if part.machine_status == 'Machined' %}status-machined{% else %}status-other{% endif %}">
+                {% if part.dept.lower == "assembly" %}
+                    {{ part.machine_status }}
+                {% endif %}
+            </td>
+            <td class="{% if part.picking_status == 'Complete' %}status-complete
+                        {% elif part.picking_status == 'Waiting' %}status-waiting
+                        {% else %}status-other{% endif %}">
+                {% if part.dept.lower == "assembly" %}
+                    {{ part.picking_status }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
     </table>
+    
 {% endblock %}
 
 {% block javascript %}

@@ -289,9 +289,10 @@ from .models import Order, Part, Job, PickingProcess, Workshop, Upholstery, Work
 
 @login_required
 @user_passes_test(is_orders)
-def order_detail(request, sage_order_number):
+def order_detail2(request, sage_order_number):
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
     parts = Part.objects.filter(sage_order_number=order).select_related('product_code', 'job')
+    print(parts)
 
     workshops = {workshop.product_code_id: workshop for workshop in Workshop.objects.filter(sage_order_number=order)}
     upholsteries = {upholstery.part_id: upholstery for upholstery in Upholstery.objects.filter(part__sage_order_number=order)}
@@ -304,7 +305,7 @@ def order_detail(request, sage_order_number):
     for part in parts:
         # Handle assembly status as before
         if part.dept.lower() == 'upholstery':
-            part.assembly_status = upholsteries.get(part.id, {}).get('assembly_status', 'N/A')
+            part.assembly_status = upholsteries.get(part.part_id, {}).get('assembly_status', 'N/A')
         else:
             workshop = workshops.get(part.product_code_id)
             part.assembly_status = workshop.assembly_status if workshop else 'N/A'
@@ -316,6 +317,44 @@ def order_detail(request, sage_order_number):
         'order': order,
         'parts': parts,
     })
+
+
+
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import Order, Part, Upholstery
+
+@login_required
+@user_passes_test(is_orders)
+def order_detail(request, sage_order_number):
+    # Fetch the order using its sage order number
+    order = get_object_or_404(Order, sage_order_number=sage_order_number)
+
+    # Fetch parts related to the order and use select_related for efficiency
+    # This assumes each part has one direct relation to product_code and job
+    # Adjust the prefetch_related or select_related based on your actual relationships
+    parts = Part.objects.filter(sage_order_number=order)
+
+    return render(request, 'management/order_detail.html', {
+        'order': order,
+        'parts': parts,
+    })
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1214,10 +1253,10 @@ def assembly_department(request):
     # Apply search filter
     if search_query:
         workshops_query = workshops_query.filter(
-            Q(sage_order_number__delivery_postcode__icontains=search_query) |
-            Q(sage_order_number__sage_order_number__icontains=search_query) |
-            Q(product_code__product_code__icontains=search_query) |
-            Q(product_code__product_description__icontains=search_query)
+            Q(part__sage_order_number__delivery_postcode__icontains=search_query) |
+            Q(part__sage_order_number__sage_order_number__icontains=search_query) |
+            Q(part__product_code__product_code__icontains=search_query) |
+            Q(part__product_code__product_description__icontains=search_query)
         )
 
     # Apply assembly status filter
@@ -1230,35 +1269,18 @@ def assembly_department(request):
     elif sort_order == 'oldest':
         workshops_query = workshops_query.order_by('id')
 
-    # Apply prefetching with correct filtering for unique jobs
-    workshops_query = workshops_query.prefetch_related(
-        Prefetch('sage_order_number__part_set__job', queryset=Job.objects.all().distinct()),
-        Prefetch('sage_order_number__part_set__job__pickingprocess_set', queryset=PickingProcess.objects.all())
-    )
+    # No longer need to prefetch related 'sage_order_number__part_set__job' as 'Part' is directly linked to 'Workshop'
+    # If you need to prefetch related objects for performance, adjust according to the new model relationships
 
     # Pagination
     num_items = int(request.GET.get('num_items', 20))
     if 'show_more' in request.GET:
         num_items += 20
 
-    # Pagination setup...
     paginator = Paginator(workshops_query.distinct(), num_items)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    # Prepare unique jobs for each workshop
-    for workshop in page_obj:
-        unique_jobs = {}
-        parts = workshop.sage_order_number.part_set.all()
-        for part in parts:
-            # Check if part has an associated job before accessing it
-            if hasattr(part, 'job') and part.job:
-                job = part.job
-                # Proceed only if the job is not already included
-                if job.job_name not in unique_jobs:
-                    # Check if there's at least one picking process associated with the job
-                    picking_status = job.pickingprocess_set.first().picking_status if job.pickingprocess_set.exists() else "No Status"
-                    unique_jobs[job.job_name] = picking_status
-        workshop.unique_jobs_details = [{'job_name': k, 'picking_status': v} for k, v in unique_jobs.items()]
+    # No longer prepare unique jobs based on the removed relationship; adjust logic if necessary based on new schema
 
     return render(request, 'assembly/assembly_department.html', {
         'page_obj': page_obj,
@@ -1267,7 +1289,6 @@ def assembly_department(request):
         'sort_order': sort_order,
         'search_query': search_query,
     })
-
 
 
 
@@ -1431,16 +1452,16 @@ def minikitchen_department(request):
 
     if 'clear' in request.GET:
         search_query = ''
-    
+
     workshop_type = WorkshopTypes.objects.get(workshop_name="Minikitchen")
     workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
 
     if search_query:
         workshops_query = workshops_query.filter(
-            Q(sage_order_number__delivery_postcode__icontains=search_query) |
-            Q(sage_order_number__sage_order_number__icontains=search_query) |
-            Q(product_code__product_code__icontains=search_query) |
-            Q(product_code__product_description__icontains=search_query)
+            Q(part__sage_order_number__delivery_postcode__icontains=search_query) |
+            Q(part__sage_order_number__sage_order_number__icontains=search_query) |
+            Q(part__product_code__product_code__icontains=search_query) |
+            Q(part__product_code__product_description__icontains=search_query)
         )
 
     if assembly_status_filter == 'Waiting':
@@ -1460,7 +1481,7 @@ def minikitchen_department(request):
         num_items += 20
 
     paginator = Paginator(workshops_query, num_items)
-    page_obj = paginator.get_page(1)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
     
     return render(request, 'assembly/minikitchen_department.html', {
         'page_obj': page_obj,
@@ -1468,8 +1489,6 @@ def minikitchen_department(request):
         'sort_order': sort_order,
         'search_query': search_query,
     })
-
-
 
 
 
@@ -1499,16 +1518,16 @@ def plywood_department(request):
     workshop_type = WorkshopTypes.objects.get(workshop_name="Plywood")
     workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
 
-    # Filter based on search query if provided
+    # Updated filter based on search query if provided
     if search_query:
         workshops_query = workshops_query.filter(
-            Q(sage_order_number__delivery_postcode__icontains=search_query) |
-            Q(sage_order_number__sage_order_number__icontains=search_query) |
-            Q(product_code__product_code__icontains=search_query) |
-            Q(product_code__product_description__icontains=search_query)
+            Q(part__sage_order_number__delivery_postcode__icontains=search_query) |
+            Q(part__sage_order_number__sage_order_number__icontains=search_query) |
+            Q(part__product_code__product_code__icontains=search_query) |
+            Q(part__product_code__product_description__icontains=search_query)
         )
 
-    # Apply filters for assembly status, adjust for "Waiting" to include "In Progress"
+    # Apply filters for assembly status
     if assembly_status_filter == 'Built':
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
     elif assembly_status_filter == 'Waiting':
@@ -1517,12 +1536,11 @@ def plywood_department(request):
             Q(assembly_status='Waiting') | Q(assembly_status='In Progress')
         )
 
-
     # Sorting
     if sort_order == 'newest':
-        workshops_query = workshops_query.order_by('id')
-    elif sort_order == 'oldest':
         workshops_query = workshops_query.order_by('-id')
+    elif sort_order == 'oldest':
+        workshops_query = workshops_query.order_by('id')
 
     # Pagination
     num_items = int(request.GET.get('num_items', 20))
@@ -1530,7 +1548,7 @@ def plywood_department(request):
         num_items += 20
 
     paginator = Paginator(workshops_query.distinct(), num_items)
-    page_obj = paginator.get_page(1)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
     
     return render(request, 'assembly/plywood_department.html', {
         'page_obj': page_obj,
@@ -1538,7 +1556,6 @@ def plywood_department(request):
         'sort_order': sort_order,
         'search_query': search_query,
     })
-
 
 
 
@@ -1885,56 +1902,39 @@ from django.db import transaction
 def import_csv(request):
     if request.method == 'POST' and 'file' in request.FILES:
         csv_file = request.FILES['file']
-        # Process your CSV file here
         csvfile = csv_file.read().decode('utf-8').splitlines()
-
-
-
-
-
-
-        # Temporary storage for customers and orders for console printing
-        temp_customers = {}
-        temp_orders = {}
-        order_values = {}
-
-    
         reader = csv.DictReader(csvfile)
-        # Validate that 'Dept' is a column in the CSV. If not, print an error message.
+
         if 'Dept ' not in reader.fieldnames:
             raise ValueError("CSV file does not contain 'Dept' column or the column header is misspelled.")
 
-        
+        temp_customers = {}
+        temp_orders = {}
+        temp_parts = {}
+        order_values = {}
+
         with transaction.atomic():
             for row in reader:
-
-                
-
-
                 customer_name = row['Customer']
                 sage_order_number = row['Sales Order']
-                dept = row['Dept ']
-                
-                if dept != 'Default':
-                    # Convert the 'Unit Price' to float and accumulate the total value per order
-                    unit_price_str = row.get('Unit Price', '0').strip()
-                    unit_price = 0.0  # Default value if 'Unit Price' is empty
-                    if unit_price_str:
-                        try:
-                            unit_price = float(unit_price_str)
-                        except ValueError:
-                            # Log the error or handle it as per your application's requirements
-                            print(f"Could not convert {unit_price_str} to float for order {row['Sales Order']}. Defaulting to 0.")
-                    order_values[sage_order_number] = order_values.get(sage_order_number, 0) + unit_price
-                
+                dept = row['Dept '].strip()
+
+                # Convert the 'Unit Price' to float and accumulate the total value per order
+                unit_price_str = row.get('Unit Price', '0').strip()
+                unit_price = 0.0
+                if unit_price_str:
+                    try:
+                        unit_price = float(unit_price_str)
+                    except ValueError:
+                        print(f"Could not convert {unit_price_str} to float for order {sage_order_number}. Defaulting to 0.")
+
+                order_values[sage_order_number] = order_values.get(sage_order_number, 0) + unit_price
+
                 # Check if customer exists, if not create a new one
-                customer, created = Customer.objects.get_or_create(
-                    name=customer_name
-                )
-                # Add to temp_customers for console printing
+                customer, created = Customer.objects.get_or_create(name=customer_name)
                 if created:
                     temp_customers[customer_name] = customer.customer_id
-                
+
                 # Now, handle the order
                 order_date = row['Order Date']
                 order_date = convert_date_format(order_date)
@@ -1943,10 +1943,8 @@ def import_csv(request):
                 order_taken_by = row['Order Taken By']
                 estimated_delivery_wkc = row['Despatch By']
                 estimated_delivery_wkc = convert_date_format(estimated_delivery_wkc)
-                # ... Extract other fields as necessary
 
                 total_value = order_values.get(sage_order_number, 0)
-                # Check if order exists, if not create a new one
                 order, created = Order.objects.update_or_create(
                     sage_order_number=sage_order_number,
                     defaults={
@@ -1956,23 +1954,82 @@ def import_csv(request):
                         'customer_postcode': customer_postcode,
                         'order_taken_by': order_taken_by,
                         'estimated_delivery_wkc': estimated_delivery_wkc,
-                        'value': total_value,  # Set the total value of parts for the order
-                        # ... Set other fields as necessary
+                        'value': total_value,
                     }
                 )
-                # Add to temp_orders for console printing
                 if created:
                     temp_orders[order.sage_order_number] = {
                         'customer_id': customer.customer_id,
                         'order_date': order.order_date,
-                        'value': total_value,  # Use the accumulated total value
-                        # ... Include other fields as necessary
+                        'value': total_value,
                     }
 
+                if dept != 'Default':
+                    # Retrieve or create the PartDescription instance
+                    part_desc, created = PartDescription.objects.get_or_create(
+                        product_code=row['Product Code'],
+                        defaults={
+                            # Set other required fields for PartDescription, if any
+                        }
+                    )
 
-            # transaction.set_rollback(True)
+                    # Retrieve the order instance to link with the part
+                    order_instance = Order.objects.get(sage_order_number=row['Sales Order'])
 
-                        
+                    # Assuming 'Comment 1' and 'Comment 2' are columns in your CSV
+                    comment_1 = row.get('Comment 1', '')  # Default to empty string if not present
+                    comment_2 = row.get('Comment 2', '')  # Default to empty string if not present
+
+                    # Create or update the part record
+                    part, created = Part.objects.update_or_create(
+                        sage_order_number=order_instance,
+                        product_code=part_desc,
+                        defaults={
+                            'dept': row['Dept '],
+                            'machine_status': None,  # Setting machine_status as null
+                            'picking_status': None,  # Setting picking_status as null
+                            'assembly_status': None,  # Setting assembly_status as null
+                            'job': None,  # Setting job_id as null, assuming you have a Job model
+                            'sage_comment1': comment_1,
+                            'sage_comment2': comment_2,
+                        }
+                    )
+
+
+
+                    # Now check if the part's department is upholstery
+                    if row['Dept '].strip().lower() == 'upholstery':
+                        # Create or update the Upholstery instance
+                        # Assuming Upholstery model has a 'part' field that is a OneToOneField to the Part model
+                        upholstery, created = Upholstery.objects.update_or_create(
+                            part=part,
+                            defaults={
+                                'comments': row.get('Comment 1', ''),
+                                'comment2': row.get('Comment 2', ''),
+                                # Other fields are set to None as per your requirements
+                                'value': None,
+                                'pre_booked_date': None,
+                                'routed_date': None,
+                                'assembly_status': None,
+                                'assembly_notes': None,
+                            }
+                        )
+
+
+
+
+
+
+
+
+
+                    temp_parts[row['Product Code']] = {
+                        'description': row['Description'],
+                        'qty_ordered': row.get('Qty Ordered', 1),
+                        'unit_price': unit_price,
+                        'weight': row.get('Weight', 0.0),
+                    }
+
         # Print temporary tables to the console
         print("Temporary Customers Table")
         for name, id in temp_customers.items():
@@ -1982,14 +2039,11 @@ def import_csv(request):
         for order_num, order_data in temp_orders.items():
             print(f"Order Number: {order_num}, Order Data: {order_data}")
 
-            
-
-
-
-
-
-
+        print("\nTemporary Parts Table")
+        for product_code, part_data in temp_parts.items():
+            print(f"Product Code: {product_code}, Part Data: {part_data}")
 
         # Redirect or respond after processing
-        return redirect('import_data') 
-    return HttpResponse('Failed to upload file', status=400)
+        return redirect('import_data')
+    else:
+        return HttpResponse('Failed to upload file', status=400)
