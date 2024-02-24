@@ -570,11 +570,12 @@ background-color: #0056b3;
 .status-machined { background-color: #c8e6c9; } /* Green for Machined */
 
 
-.status-built {
-    background-color: green; /* Green for Built */
-}
+
+.status-waiting, .status-printed, .status-cut { background-color: #ffcdd2; } /* Red-ish for early stages or waiting */
+.status-sewn-needs-filling, .status-sewn-needs-frame-48hrs, .status-onhold, .status-sewn-needs-frame-5days, .status-sewn-needs-frame-10days { background-color: #fff9c4; } /* Yellow-ish for intermediate stages */
+.status-goods-ready { background-color: #c8e6c9; } /* Green for Goods Ready */
 
 
-.status-onhold {
-    background-color: red; /* Red for On Hold */
-}
+
+
+

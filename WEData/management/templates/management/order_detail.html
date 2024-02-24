@@ -61,51 +61,76 @@
         <tr>
             <th>Product Code</th>
             <th>Department</th>
-            <th>Assembly Status</th>
-            <th>Comments</th>
             <th>Job Number</th>
             <th>Machining Status</th>
             <th>Picking Status</th>
+            <th>Assembly Status</th>
+            <th>Comments</th>
+            
+
         </tr>
         {% for part in parts %}
         <tr>
             <td>{{ part.product_code.product_code }}</td>
             <td>{{ part.dept }}</td>
-            <td class="{% if part.dept.lower == 'upholstery' and part.upholsteries.first.assembly_status == 'Complete' %}status-complete
-                        {% elif part.dept.lower == 'upholstery' and part.upholsteries.first.assembly_status == 'Waiting' %}status-waiting
-                        {% else %}status-other{% endif %}">
-                {% if part.dept.lower == "upholstery" %}
-                    {{ part.upholsteries.first.assembly_status }}
+            <td class="{% if part.dept.lower != 'assembly' %}status-complete
+                        {% elif part.dept.lower == 'assembly' and not part.job %}status-waiting
+                        {% endif %}">
+                {% if part.dept.lower == 'assembly' and part.job %}
+                    {{ part.job.job_name }}
+                {% elif part.dept.lower == 'assembly' and not part.job %}
+                    Unassigned
                 {% else %}
-                    {{ part.assembly_status }}
+                    &nbsp;
                 {% endif %}
             </td>
+            
+            <td class="{% if part.dept.lower != 'assembly' %}status-complete
+                        {% elif part.machine_status == 'Machined' %}status-machined
+                        {% elif part.machine_status %}status-other
+                        {% else %}status-waiting
+                        {% endif %}">&nbsp;</td>
+            <td class="{% if part.dept.lower != 'assembly' %}status-complete
+                        {% elif part.picking_status == 'Complete' %}status-complete
+                        {% elif part.picking_status %}status-other
+                        {% else %}status-waiting
+                        {% endif %}">&nbsp;</td>
+            <td class="{% if part.dept.lower == 'upholstery' %}
+                        {% if part.upholsteries.first.assembly_status == 'Waiting' %}status-waiting
+                        {% elif part.upholsteries.first.assembly_status == 'On Hold' %}status-onhold
+                        {% elif part.upholsteries.first.assembly_status == 'Printed' %}status-printed
+                        {% elif part.upholsteries.first.assembly_status == 'Cut' %}status-cut
+                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs filling (48 hrs)' %}status-sewn-needs-filling
+                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs frame (48 hrs)' %}status-sewn-needs-frame-48hrs
+                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs frame (5 Days)' %}status-sewn-needs-frame-5days
+                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs frame (10 days)' %}status-sewn-needs-frame-10days
+                        {% elif part.upholsteries.first.assembly_status == 'Goods Ready' or part.upholsteries.first.assembly_status == 'Built' %}status-complete
+                        {% else %}status-other
+                        {% endif %}
+                    {% else %}
+                        {% if part.assembly_status == 'Complete' or part.assembly_status == 'Built' %}status-complete
+                        {% elif part.assembly_status == 'Waiting' %}status-waiting
+                        {% else %}status-other
+                        {% endif %}
+                    {% endif %}">
+                {% if part.dept.lower == "upholstery" %}
+                    {{ part.upholsteries.first.assembly_status|default:"N/A" }}
+                {% else %}
+                    {{ part.assembly_status|default:"N/A" }}
+                {% endif %}
+            </td>
+            
             <td>
                 {% if part.dept.lower == "upholstery" %}
-                    {{ part.upholsteries.first.comments|default:"N/A" }}<br>
-                    {{ part.upholsteries.first.comment2|default:"N/A" }}
+                    {{ part.upholsteries.first.comments|default:"" }}<br>
+                    {{ part.upholsteries.first.comment2|default:"" }}
                 {% else %}
-                    {{ part.sage_comment1|default:"N/A" }}<br>
-                    {{ part.sage_comment2|default:"N/A" }}
+                    {{ part.sage_comment1|default:"" }}<br>
+                    {{ part.sage_comment2|default:"" }}
                 {% endif %}
             </td>
-            <td>
-                {% if part.dept.lower == "assembly" %}
-                    {{ part.job.job_id }}
-                {% endif %}
-            </td>
-            <td class="{% if part.machine_status == 'Machined' %}status-machined{% else %}status-other{% endif %}">
-                {% if part.dept.lower == "assembly" %}
-                    {{ part.machine_status }}
-                {% endif %}
-            </td>
-            <td class="{% if part.picking_status == 'Complete' %}status-complete
-                        {% elif part.picking_status == 'Waiting' %}status-waiting
-                        {% else %}status-other{% endif %}">
-                {% if part.dept.lower == "assembly" %}
-                    {{ part.picking_status }}
-                {% endif %}
-            </td>
+
+
         </tr>
         {% endfor %}
     </table>
