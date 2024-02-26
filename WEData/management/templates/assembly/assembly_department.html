@@ -65,8 +65,9 @@
             <th>Delivery Postcode</th>
             <th>Product Description</th>
             <th>Workshop Notes</th>
-            <th>Assembly Status</th>
             <th>Picking Status</th>
+            <th>Assembly Status</th>
+            
             <!-- Add more headers if needed -->
         </tr>
     </thead>
@@ -88,6 +89,24 @@
                     </form>
                 </div>
             </td>
+            <td class="{% with picking_status=workshop.part.job.pickingprocess_set.first.picking_status|default:'' %}
+                        {% if picking_status == 'Picked' %}status-complete
+                        {% elif picking_status == 'On Hold' %}status-other
+                        {% elif picking_status == 'Waiting' %}status-waiting
+                        {% else %}status-other{% endif %}
+                    {% endwith %}">
+                <!-- Display Job Name -->
+                {% if workshop.part.job %}
+                    <a href="{% url 'job_detail' workshop.part.job.job_id %}">{{ workshop.part.job.job_name }}</a>
+                {% else %}
+                    Not Assigned
+                {% endif %}
+                <br>
+                <!-- Display Picking Status, default to "Not Available" if not exists -->
+                {% with picking_status=workshop.part.job.picking_info.0.picking_status|default:"" %}
+                    {{ picking_status }}
+                {% endwith %}
+            </td>
             <td>
                 <div class="filter-form">
                     <form data-workshop-id="{{ workshop.id }}">
@@ -99,24 +118,7 @@
                     </form>
                 </div>
             </td>
-            <td>
-                <table class="nested-table">
-                    <!-- Table headers -->
-                    <tbody>
-                        <!-- Assuming logic to display job details remains relevant or is adjusted based on new model structure -->
-                        {% for job_detail in workshop.unique_jobs_details %}
-                        <tr class="{% if job_detail.picking_status == 'Picked' %}picking-status-picked
-                                {% elif job_detail.picking_status == 'On Hold' %}picking-status-on-hold
-                                {% elif job_detail.picking_status == 'Waiting' %}picking-status-waiting
-                                {% elif job_detail.picking_status == 'No Status' %}picking-status-waiting
-                                {% endif %}">
-                            <td>{{ job_detail.job_name }}</td>
-                            <td>{{ job_detail.picking_status }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </td>
+
         </tr>
         {% endfor %}
     </tbody>

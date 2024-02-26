@@ -28,11 +28,16 @@
                 <th>Codes:</th>
                 <td>
                     {% if codes %}
-                        <ul style="list-style-type:none; padding: 0; margin: 0;">
+                        <table class="order-details-table">
                             {% for code in codes %}
-                                <li>{{ code.label }}</li>
+                                <tr>
+                                    <td >{{ code.code }}</td>
+                                    <td >{{ code.label }}</td>
+                                </tr>
                             {% endfor %}
-                        </ul>
+                        </table>
+                    {% else %}
+                        <p>No codes available.</p>
                     {% endif %}
                 </td>
             </tr>
@@ -60,9 +65,11 @@
     <table>
         <tr>
             <th>Product Code</th>
+            <th>Product Description</th>
             <th>Department</th>
             <th>Job Number</th>
-            <th>Machining Status</th>
+            <th>8mm Status</th>
+            <th>18mm Status</th>
             <th>Picking Status</th>
             <th>Assembly Status</th>
             <th>Comments</th>
@@ -72,30 +79,75 @@
         {% for part in parts %}
         <tr>
             <td>{{ part.product_code.product_code }}</td>
-            <td>{{ part.dept }}</td>
-            <td class="{% if part.dept.lower != 'assembly' %}status-complete
-                        {% elif part.dept.lower == 'assembly' and not part.job %}status-waiting
-                        {% endif %}">
-                {% if part.dept.lower == 'assembly' and part.job %}
-                    {{ part.job.job_name }}
-                {% elif part.dept.lower == 'assembly' and not part.job %}
-                    Unassigned
-                {% else %}
-                    &nbsp;
-                {% endif %}
+            <td>
+                {{ part.product_code.product_description|default:"Description not available" }}
             </td>
+            <td>{{ part.dept }}</td>
+
             
             <td class="{% if part.dept.lower != 'assembly' %}status-complete
-                        {% elif part.machine_status == 'Machined' %}status-machined
-                        {% elif part.machine_status %}status-other
-                        {% else %}status-waiting
-                        {% endif %}">&nbsp;</td>
-            <td class="{% if part.dept.lower != 'assembly' %}status-complete
-                        {% elif part.picking_status == 'Complete' %}status-complete
-                        {% elif part.picking_status %}status-other
-                        {% else %}status-waiting
-                        {% endif %}">&nbsp;</td>
-            <td class="{% if part.dept.lower == 'upholstery' %}
+                        {% elif not part.job %}status-waiting
+                        {% endif %}">
+                {% if part.dept.lower == 'assembly' and part.job %}
+                    <a href="{% url 'job_detail' part.job.job_id %}">{{ part.job.job_name }}</a>
+                {% elif part.dept.lower == 'assembly' and not part.job %}
+                    <div style="background-color: inherit;">&nbsp;</div>
+                {% else %}
+                    <div style="background-color: inherit;">&nbsp;</div>
+                {% endif %}
+            </td>
+
+            
+            
+            <td class="{% if part.department != 'Assembly' %}status-complete
+                        {% elif part.job.mm8_status == 'Machined' %}status-complete
+                        {% elif part.job.mm8_status == 'On Hold' %}status-other
+                        {% elif part.job.mm8_status == 'Waiting' %}status-waiting
+                        {% else %}status-other{% endif %}">
+                {% if part.department == 'Assembly' %}
+                    {{ part.job.mm8_status|default:"" }}
+                {% endif %}
+            </td>
+
+
+
+
+
+            <td class="{% if part.department != 'Assembly' %}status-complete
+                        {% elif part.job.mm18_status == 'Machined' %}status-complete
+                        {% elif part.job.mm18_status == 'On Hold' %}status-other
+                        {% elif part.job.mm18_status == 'Waiting' %}status-waiting
+                        {% else %}status-other{% endif %}">
+                {% if part.department == 'Assembly' %}
+                    {{ part.job.mm18_status|default:"" }}
+                {% endif %}
+            </td>
+
+
+
+
+
+
+
+            {% with job_picking_status=part.job.pickingprocess_set.first.picking_status|default_if_none:"" %}
+                <td class="{% if part.department != 'Assembly' %}status-complete
+                            {% elif job_picking_status == 'Picked' or part.picking_status == 'Picked' %}status-complete
+                            {% elif job_picking_status == 'On Hold' or part.picking_status == 'On Hold' %}status-other
+                            {% elif job_picking_status == 'Waiting' or part.picking_status == 'Waiting' %}status-waiting
+                            {% else %}status-other{% endif %}">
+                    {% if part.department == 'Assembly' %}
+                        {% if job_picking_status %}
+                            {{ job_picking_status }}
+                        {% else %}
+                            {{ part.picking_status|default:"" }}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            {% endwith %}
+
+
+
+            <td class="{% if part.dept|lower == 'upholstery' %}
                         {% if part.upholsteries.first.assembly_status == 'Waiting' %}status-waiting
                         {% elif part.upholsteries.first.assembly_status == 'On Hold' %}status-onhold
                         {% elif part.upholsteries.first.assembly_status == 'Printed' %}status-printed
@@ -108,15 +160,20 @@
                         {% else %}status-other
                         {% endif %}
                     {% else %}
-                        {% if part.assembly_status == 'Complete' or part.assembly_status == 'Built' %}status-complete
-                        {% elif part.assembly_status == 'Waiting' %}status-waiting
-                        {% else %}status-other
-                        {% endif %}
+                        {% with workshop=part.workshops.first %}
+                            {% if workshop.assembly_status == 'Built' %}status-complete
+                            {% elif workshop.assembly_status == 'On Hold' %}status-onhold
+                            {% elif workshop.assembly_status == 'Waiting' %}status-waiting
+                            {% else %}status-other
+                            {% endif %}
+                        {% endwith %}
                     {% endif %}">
-                {% if part.dept.lower == "upholstery" %}
+                {% if part.dept|lower == "upholstery" %}
                     {{ part.upholsteries.first.assembly_status|default:"N/A" }}
                 {% else %}
-                    {{ part.assembly_status|default:"N/A" }}
+                    {% with workshop=part.workshops.first %}
+                        {{ workshop.assembly_status|default:"N/A" }}
+                    {% endwith %}
                 {% endif %}
             </td>
             

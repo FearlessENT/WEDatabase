@@ -339,9 +339,18 @@ def order_detail(request, sage_order_number):
     # Adjust the prefetch_related or select_related based on your actual relationships
     parts = Part.objects.filter(sage_order_number=order)
 
+    codes = []
+    if order.order_notes:
+        notes = order.order_notes.split('; ')
+        for note in notes:
+            if ': ' in note:
+                code, label = note.split(': ', 1)
+                codes.append({'code': code, 'label': label})
+
     return render(request, 'management/order_detail.html', {
         'order': order,
         'parts': parts,
+        'codes': codes,
     })
 
 
@@ -450,7 +459,9 @@ def job_detail(request, job_id):
     machining_status = cnc_status.machine_stage if cnc_status else 'Not Available'
 
     # Fetch workshop info linked to the job
-    workshop_infos = Workshop.objects.filter(sage_order_number__part__job_id=job_id).distinct()
+    # Fetch workshop info linked to the job
+    workshop_infos = Workshop.objects.filter(part__job=job).distinct()
+
 
     return render(request, 'management/job_detail.html', {
         'job': job,
@@ -1227,14 +1238,11 @@ def update_picking_notes(request, picking_id):
 
 
 
+from django.db.models import Prefetch
+from .models import Workshop, PickingProcess, Job, Part
 from django.core.paginator import Paginator
-from django.shortcuts import render
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .models import Workshop, WorkshopTypes
-
-
-
-from django.db.models import Prefetch, Q
+from django.db.models import Q
 
 @login_required
 @user_passes_test(is_assembly)
@@ -1248,7 +1256,7 @@ def assembly_department(request):
         search_query = ''
 
     # Start with the base query for workshops
-    workshops_query = Workshop.objects.filter(workshop_id__workshop_name="assembly")
+    workshops_query = Workshop.objects.filter(workshop_id__workshop_name="assembly").select_related('part', 'part__job')
 
     # Apply search filter
     if search_query:
@@ -1263,14 +1271,15 @@ def assembly_department(request):
     if assembly_status_filter != 'all':
         workshops_query = workshops_query.filter(assembly_status=assembly_status_filter)
 
+    # Prepare a prefetch for PickingProcess linked through Job for each Part
+    picking_prefetch = Prefetch('part__job__pickingprocess_set', queryset=PickingProcess.objects.all(), to_attr='picking_info')
+    workshops_query = workshops_query.prefetch_related(picking_prefetch)
+
     # Apply sorting
     if sort_order == 'newest':
         workshops_query = workshops_query.order_by('-id')
     elif sort_order == 'oldest':
         workshops_query = workshops_query.order_by('id')
-
-    # No longer need to prefetch related 'sage_order_number__part_set__job' as 'Part' is directly linked to 'Workshop'
-    # If you need to prefetch related objects for performance, adjust according to the new model relationships
 
     # Pagination
     num_items = int(request.GET.get('num_items', 20))
@@ -1280,8 +1289,6 @@ def assembly_department(request):
     paginator = Paginator(workshops_query.distinct(), num_items)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
-    # No longer prepare unique jobs based on the removed relationship; adjust logic if necessary based on new schema
-
     return render(request, 'assembly/assembly_department.html', {
         'page_obj': page_obj,
         'assembly_status_filter': assembly_status_filter,
@@ -1289,6 +1296,7 @@ def assembly_department(request):
         'sort_order': sort_order,
         'search_query': search_query,
     })
+
 
 
 
@@ -1912,12 +1920,54 @@ def import_csv(request):
         temp_orders = {}
         temp_parts = {}
         order_values = {}
+        order_notes = {} 
+        first_customer_per_order = {}
+
+
+        # Mapping of department names to WorkshopTypes IDs
+        workshop_ids = {
+            'Assembly': 1,
+            'MiniKitchenWorkshop': 2,
+            'PlywoodWorkshop': 3
+        }
+
 
         with transaction.atomic():
             for row in reader:
-                customer_name = row['Customer']
+                # customer_name = row['Customer']
                 sage_order_number = row['Sales Order']
                 dept = row['Dept '].strip()
+
+
+                if sage_order_number not in first_customer_per_order:
+                    # If the customer field is not empty, store it as the first occurrence
+                    if row['Customer'].strip():
+                        first_customer_per_order[sage_order_number] = row['Customer'].strip()
+                    else:
+                        # If it's empty, initialize with None and expect to fill it later
+                        first_customer_per_order[sage_order_number] = None
+                # If the order number is already seen but no customer was stored yet
+                elif not first_customer_per_order[sage_order_number] and row['Customer'].strip():
+                    first_customer_per_order[sage_order_number] = row['Customer'].strip()
+
+                # Use the first customer name encountered for this order number
+                customer_name = first_customer_per_order[sage_order_number]
+                if not customer_name:
+                    continue
+
+
+
+
+                if dept.lower() == 'default':
+                    # Format the special code and its description
+                    code = row['Product Code']
+                    description = row['Description']
+                    if sage_order_number not in order_notes:
+                        order_notes[sage_order_number] = []
+                    order_notes[sage_order_number].append(f"{code}: {description}")
+
+
+
 
                 # Convert the 'Unit Price' to float and accumulate the total value per order
                 unit_price_str = row.get('Unit Price', '0').strip()
@@ -2010,12 +2060,25 @@ def import_csv(request):
                                 'value': None,
                                 'pre_booked_date': None,
                                 'routed_date': None,
-                                'assembly_status': None,
+                                'assembly_status': 'Waiting',
                                 'assembly_notes': None,
                             }
                         )
 
 
+
+                    dept = row['Dept '].strip()
+                    workshop_type_id = workshop_ids.get(dept)
+
+                    if workshop_type_id:
+                        workshop_type = WorkshopTypes.objects.get(workshop_id=workshop_type_id)
+                        # Create a new Workshop instance for the part
+                        Workshop.objects.create(
+                            workshop_id=workshop_type,
+                            part=part,
+                            assembly_status='Waiting',  # Set the default assembly_status to 'Waiting'
+                            notes=''  # Add any default notes if needed
+                        )
 
 
 
@@ -2029,6 +2092,25 @@ def import_csv(request):
                         'unit_price': unit_price,
                         'weight': row.get('Weight', 0.0),
                     }
+
+
+
+
+
+
+
+
+
+
+                for sage_order_number, notes in order_notes.items():
+                    formatted_notes = '; '.join(notes)  # Join all notes with a semicolon and space
+                    order = Order.objects.get(sage_order_number=sage_order_number)
+                    order.order_notes = formatted_notes
+                    order.save()
+
+
+
+
 
         # Print temporary tables to the console
         print("Temporary Customers Table")

@@ -276,19 +276,6 @@
 
 
 
-    // Script for Show More button and maintaining scroll position
-    document.getElementById('show-more').addEventListener('click', function() {
-        localStorage.setItem('scrollPosition', window.scrollY || document.documentElement.scrollTop);
-    });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('scrollPosition') !== null) {
-            window.scrollTo(0, localStorage.getItem('scrollPosition'));
-            localStorage.removeItem('scrollPosition');
-        }
-    });
-
-
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.filter-form select[name="machine_stage"]').forEach(function(select) {
             select.addEventListener('change', function() {

@@ -195,8 +195,8 @@ class WorkshopTypes(models.Model):
 
 class Workshop(models.Model):
     id = models.AutoField(primary_key=True)
-    workshop_id = models.ForeignKey(WorkshopTypes, on_delete=models.CASCADE, db_column='WorkshopID', related_name='workshops')
-    part = models.ForeignKey(Part, on_delete=models.CASCADE, db_column='PartID')  # New link to Part
+    workshop_id = models.ForeignKey(WorkshopTypes, on_delete=models.CASCADE, db_column='WorkshopID')
+    part = models.ForeignKey(Part, on_delete=models.CASCADE, db_column='PartID', related_name='workshops')  # New link to Part
     assembly_status = models.CharField(max_length=255, db_column='AssemblyStatus')
     notes = models.TextField(db_column='Notes')
 

@@ -80,120 +80,60 @@
 
 
 
-    <h3>Parts Linked to Job</h3>
+
+
+    <h3>Parts in this Job</h3>
     <table>
-        <tr>
-            <th>Part ID</th>
-            <th>Product Code</th>
-            <th>Product Description</th>
-            <th>Machining Status</th> <!-- New column for machining status -->
-        </tr>
-        {% for part in parts %}
+        <thead>
             <tr>
-                <td>{{ part.part_id }}</td>
-                <td>{{ part.product_code }}</td>
-                <td>{{ part.product_code.product_description }}</td>
-                <td class="{% if machining_status == 'Machined' %}status-green{% elif machining_status == 'In Progress' %}status-orange{% else %}status-red{% endif %}">
-                    {{ machining_status }}
-                </td>
+                <th>Part ID</th>
+                <th>Order Number</th>
+                <th>Product Code</th>
+                <th>Product Description</th>
+                <th>8mm Status</th>
+                <th>18mm Status</th>
+                <th>Picking Status</th>
             </tr>
-        {% endfor %}
-    </table>
-
-
-
-
-    <h3>Orders Linked to this Job</h3>
-    <table>
-        <tr>
-            <th>Order Number</th>
-            <th>Customer</th>
-            <th>Order Date</th>
-            <!-- Add more headers as needed -->
-        </tr>
-        {% for order in orders %}
-            <tr>
-                <td>
-                    <a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a>
-                </td>
-                <td>
-                    <a href="{% url 'customer_orders' order.customer.customer_id %}">{{ order.customer.name }}</a>
-                </td>
-                <td>{{ order.order_date }}</td>
-                <!-- Add more order details as needed -->
-            </tr>
-        {% endfor %}
-    </table>
-    
-
-
-
-
-
-
-
-
-    <h3>Picking Process</h3>
-    <table>
-        <tr>
-            <th>Part ID</th>
-            <th>Part Status</th>
-            <th>Picking Status</th>
-            <!-- Add more headers as needed -->
-        </tr>
-        {% for picking in picking_infos %}
-            <tr>
-                <td>{{ picking.part.part_id }}</td>
-                <td>{{ picking.part.assembly_status }}</td> <!-- Assuming 'assembly_status' is in Part model -->
-                <td class="{% if picking.picking_status == 'Picked' %}status-green{% elif picking.picking_status == 'In Progress' %}status-orange{% else %}status-red{% endif %}">
-                    {{ picking.picking_status }}
-                </td>
-                <!-- Add other details as needed -->
-            </tr>
-        {% endfor %}
-    </table>
-
-
-    <h3>CNC Machine Information</h3>
-    <table>
-        <tr>
-            <th>Part ID</th>
-            <th>Part Status</th>
-            <th>Machine Status</th>
-            <!-- Add more headers as needed -->
-        </tr>
-        {% for cnc in cnc_infos %}
-            <tr>
-                <td>{{ cnc.part.part_id }}</td>
-                <td>{{ cnc.part.assembly_status }}</td> <!-- Assuming 'assembly_status' is in Part model -->
-                <td class="{% if cnc.machine_stage == 'Machined' %}status-green{% elif cnc.machine_stage == 'In Progress' %}status-orange{% else %}status-red{% endif %}">
-                    {{ cnc.machine_stage }}
-                </td>
-                <!-- Add other details as needed -->
-            </tr>
-        {% endfor %}
-    </table>
-
-
-
-    <h3>Workshop Information</h3>
-    <table>
-        <tr>
-            <th>Workshop Name</th>
-            <th>Assembly Status</th>
-            <!-- Add more headers as needed -->
-        </tr>
-        {% for workshop in workshop_infos %}
-            <tr>
-                <td>{{ workshop.workshop_id.workshop_name }}</td>
-                <td class="{% if workshop.assembly_status == 'Built' %}status-green{% elif workshop.assembly_status == 'Waiting' %}status-orange{% else %}status-red{% endif %}">
-                    {{ workshop.assembly_status }}
-                </td>
-                <!-- Add other details as needed -->
-            </tr>
-        {% endfor %}
+        </thead>
+        <tbody>
+            {% for part in parts %}
+                <tr>
+                    <td>{{ part.part_id }}</td>
+                    <td>
+                        <a href="{% url 'order_detail' part.sage_order_number.sage_order_number %}">{{ part.sage_order_number.sage_order_number }}</a>
+                    </td>
+                    <td>{{ part.product_code.product_code }}</td>
+                    <td>{{ part.product_code.product_description }}</td>
+                    <!-- 8mm Status with Coloring Scheme -->
+                    <td class="{% if part.job.mm8_status == 'Machined' %}status-complete
+                               {% elif part.job.mm8_status == 'On Hold' %}status-other
+                               {% elif part.job.mm8_status == 'Waiting' %}status-waiting
+                               {% else %}status-other{% endif %}">
+                        {{ part.job.mm8_status|default_if_none:"Not Available" }}
+                    </td>
+                    <!-- 18mm Status with Coloring Scheme -->
+                    <td class="{% if part.job.mm18_status == 'Machined' %}status-complete
+                               {% elif part.job.mm18_status == 'On Hold' %}status-other
+                               {% elif part.job.mm18_status == 'Waiting' %}status-waiting
+                               {% else %}status-other{% endif %}">
+                        {{ part.job.mm18_status|default_if_none:"Not Available" }}
+                    </td>
+                    <!-- Picking Status with Coloring Scheme -->
+                    {% with picking_status=part.job.pickingprocess_set.first.picking_status|default:part.picking_status %}
+                        <td class="{% if picking_status == 'Picked' %}status-complete
+                                {% elif picking_status == 'In Progress' %}status-other
+                                {% elif picking_status == 'Waiting' %}status-waiting
+                                {% else %}status-other{% endif %}">
+                            {{ picking_status|default:"Not Available" }}
+                        </td>
+                    {% endwith %}
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
     
+
+
 
 
 
