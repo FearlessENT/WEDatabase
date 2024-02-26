@@ -22,9 +22,9 @@ wait_for_db
 
 # Apply database migrations
 echo "Applying database migrations..."
-python manage.py makemigrations
-python manage.py migrate
-python manage.py collectstatic
+# python manage.py makemigrations
+# python manage.py migrate 
+python manage.py collectstatic  --no-input
 
 
 

@@ -26,6 +26,8 @@ COPY manage.py .
 COPY WEData/ WEData/
 
 # Setup mod_wsgi
+RUN apt-get update && apt-get install -y libapache2-mod-wsgi-py3
+RUN a2enmod wsgi
 RUN mod_wsgi-express install-module > /etc/apache2/mods-available/wsgi_express.load
 RUN echo "LoadModule wsgi_module /usr/lib/apache2/modules/mod_wsgi.so" > /etc/apache2/mods-available/wsgi.load
 
