@@ -579,3 +579,44 @@ background-color: #0056b3;
 
 
 
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #e9ecef;
+    color: #333;
+    line-height: 1.6;
+}
+.profile-container {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 600px;
+    margin: 40px auto;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.profile-header {
+    border-bottom: 2px solid #007bff;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+.profile-header h2 {
+    color: #007bff;
+}
+.user-details {
+    padding: 10px;
+}
+.detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-left: 3px solid #007bff;
+}
+.label {
+    font-weight: bold;
+    color: #555;
+}
+.value {
+    text-align: right;
+    color: #777;
+}

@@ -10,12 +10,14 @@
 </head>
 <body>
     <div class="header">
-        <h1>Wellbrook Education Data Systems</h1>
+        <h1>Willowbrook Education Data Systems</h1>
     </div>
 
 
 
     <div class="nav">
+
+        <a href="{% url 'profile' %}">Profile</a>
 
         {% if is_picking %}
             <a href="{% url 'picking_department' %}">Picking</a>

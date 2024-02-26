@@ -1907,6 +1907,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import transaction
 
+@login_required
 def import_csv(request):
     if request.method == 'POST' and 'file' in request.FILES:
         csv_file = request.FILES['file']
@@ -2129,3 +2130,20 @@ def import_csv(request):
         return redirect('import_data')
     else:
         return HttpResponse('Failed to upload file', status=400)
+    
+
+
+
+
+
+
+
+
+
+    from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
+@login_required
+def profile_view(request):
+    # The context is automatically populated with the user instance for logged-in users
+    return render(request, 'registration/profile.html')
