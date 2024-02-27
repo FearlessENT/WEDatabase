@@ -17,13 +17,13 @@ wait_for_db() {
 wait_for_db
 
 
-
+# /usr/wait-for-it.sh db:3306 -- echo "Database is up"
 
 
 # Apply database migrations
 echo "Applying database migrations..."
-# python manage.py makemigrations
-# python manage.py migrate 
+python manage.py makemigrations
+python manage.py migrate 
 python manage.py collectstatic  --no-input
 
 
@@ -48,4 +48,4 @@ fi
 
 # Start the Django app
 echo "Starting Django app..."
-# exec "$@"
+exec "$@"
