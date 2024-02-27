@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-4aqtz-b3abvi)szg33f8$v#lz42ozxz2f-c9c%07goa(xm3(8i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'www.willowbrookeducation.net']
+
 
 import os
 # Set default superuser credentials
