@@ -6,7 +6,6 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 
-
 # Install system dependencies, including MySQL client
 RUN apt-get update && apt-get install -y \
     default-mysql-client \

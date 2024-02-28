@@ -36,18 +36,19 @@ services:
       DB_HOST: db
       DB_PORT: 3306
     volumes:
-      - static_volume:/app/staticfiles  # Define where Django collects static files
+      - static_volume:/app/static  # Define where Django collects static files
 
   nginx:
-    image: nginx:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     container_name: nginx
     ports:
-      - "80:80"  # Nginx listens on port 80 and serves static files + proxies other requests to Django
-    volumes:
-      - ./nginx:/etc/nginx/conf.d  # Your Nginx config directory
-      - static_volume:/app/staticfiles  # Where Nginx serves static files from
+      - "8080:80"
     depends_on:
       - web
+    volumes:
+      - static_volume:/app/static
 
 volumes:
   db_data:
@@ -56,5 +57,4 @@ volumes:
       type: 'none'
       device: ${DB_VOLUME_PATH}
       o: 'bind'
-  static_volume:  # Define the volume for static files
-    driver: local
+  static_volume: {}

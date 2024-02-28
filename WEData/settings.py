@@ -24,9 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-4aqtz-b3abvi)szg33f8$v#lz42ozxz2f-c9c%07goa(xm3(8i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', 'www.willowbrookeducation.net']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
+
 
 
 import os
@@ -151,4 +152,4 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_URL = '/login/'
 
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
