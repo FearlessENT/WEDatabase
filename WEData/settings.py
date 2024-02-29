@@ -29,6 +29,7 @@ DEBUG = False
 # ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
 ALLOWED_HOSTS = ['willowbrookeducation.net', 'www.willowbrookeducation.net', '77.68.114.134', 'web']
 
+SECURE_SSL_REDIRECT = True
 
 
 
