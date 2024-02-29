@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-4aqtz-b3abvi)szg33f8$v#lz42ozxz2f-c9c%07goa(xm3(8i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
 
@@ -150,6 +150,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/management/accounts/profile'
 
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')

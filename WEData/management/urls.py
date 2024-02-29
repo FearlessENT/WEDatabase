@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.views.generic.base import RedirectView
+from django.urls import path, reverse_lazy
 from .views import update_order_notes
 from .views import job_search_results
 from .views import update_job_notes
@@ -67,6 +69,8 @@ urlpatterns = [
     path('import-csv/', views.import_csv, name='import_csv'),
     path('update_upholstery_comment2/<int:upholstery_id>/', views.update_upholstery_comment2, name='update_upholstery_comment2'),
     path('accounts/profile/', views.profile_view, name='profile'),
+    path('', RedirectView.as_view(url=reverse_lazy('login'), permanent=False)),
+    
 
 
  

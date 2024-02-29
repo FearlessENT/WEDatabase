@@ -4,8 +4,7 @@ upstream django {
 
 server {
     listen 80;
-    server_name willowbrookeducation.net www.willowbrookeducation.net;
-
+    
     location / {
         proxy_pass http://django;
         proxy_set_header Host $host;
@@ -17,4 +16,6 @@ server {
     location /static/ {
         alias /app/static/;
     }
+    
+
 }

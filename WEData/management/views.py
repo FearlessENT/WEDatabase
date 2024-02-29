@@ -952,10 +952,8 @@ from django.shortcuts import redirect
 class CustomLoginView(LoginView):
     def get_success_url(self):
         user = self.request.user
-        if user.profile.user_role == 'machinist':  # Assuming 'user_role' attribute in user profile
-            return '/cnc_operator_jobs'
-        else:
-            return '/default-page'
+        return '/management/accounts/profile'
+
 
 
 
@@ -1712,6 +1710,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import MiscTable
 
 @csrf_exempt
+@login_required
 def remove_from_misc(request, part_id):
     try:
         misc_entry = MiscTable.objects.get(part__part_id=part_id)
@@ -1786,7 +1785,6 @@ def update_upholstery_assembly_status(request):
 
 
 @login_required
-# Adapt this decorator to your upholstery permission logic
 def update_upholstery_notes(request, upholstery_id):
     if request.method == 'POST':
         assembly_notes = request.POST.get('assembly_notes')
