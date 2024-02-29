@@ -26,7 +26,9 @@ SECRET_KEY = 'django-insecure-4aqtz-b3abvi)szg33f8$v#lz42ozxz2f-c9c%07goa(xm3(8i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
+ALLOWED_HOSTS = ['willowbrookeducation.net', 'www.willowbrookeducation.net', '77.68.114.134', 'web']
+
 
 
 
