@@ -109,7 +109,7 @@
             <tr>
                 <td>{{ machine.cnc_machine_id }}</td>
                 <td>
-                    <a href="{% url 'job_detail' job_id=machine.job.job_id %}">
+                    <a href="{% url 'job_detail_view' job_id=machine.job.job_id %}">
                         {{ machine.job.job_name }}
                     </a>
                 </td>

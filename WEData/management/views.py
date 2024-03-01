@@ -151,6 +151,7 @@ def order_list(request):
     product_query = request.GET.get('product_search', '')
     job_query = request.GET.get('job_search', '')
     status_filter = request.GET.get('status_filter', 'all')  # New status filter
+    custref_query = request.GET.get('custref_search', '')
 
     sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
 
@@ -165,18 +166,22 @@ def order_list(request):
     if job_query:
         orders = Order.objects.filter(part__job__job_name__icontains=job_query).distinct()
 
+
     # Apply status filter
     if status_filter == 'complete':
         orders = orders.filter(status='Complete')  # Adjust field and value as per your model
     elif status_filter == 'incomplete':
         orders = orders.exclude(status='Complete')  # Adjust field and value as per your model
 
-
-
     if sort_order == 'newest':
         orders = orders.order_by('-sage_order_number')  # Assumes 'id' is the primary key
     elif sort_order == 'oldest':
         orders = orders.order_by('sage_order_number')
+
+
+    if custref_query:
+        # Filter orders by parsing order_notes for CUSTREF
+        orders = [order for order in orders if 'CUSTREF: ' + custref_query in (order.order_notes or '')]
 
 
     # Pagination setup
@@ -200,7 +205,8 @@ def order_list(request):
         'num_orders': num_orders,
         'num_range': num_range,
         'status_filter': status_filter,
-        'sort_order': sort_order
+        'sort_order': sort_order,
+        'custref_query': custref_query
     })
 
 
@@ -2138,10 +2144,97 @@ def import_csv(request):
 
 
 
-    from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 @login_required
 def profile_view(request):
     # The context is automatically populated with the user instance for logged-in users
     return render(request, 'registration/profile.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@login_required
+@user_passes_test(is_cncmachining)
+def job_detail_unedit(request, job_id):
+    job = get_object_or_404(Job, job_id=job_id)
+    cnc_machines = CNCMachineDescription.objects.all()
+
+    if request.method == 'POST':
+        if 'cnc_machine_id' in request.POST:
+            machine_id = request.POST.get('cnc_machine_id')
+            if machine_id:
+                job.CNCMachine_id = machine_id  # Update the machine ID
+            else:
+                job.CNCMachine = None  # Remove the machine assignment
+        else:
+            # Update job notes and additional fields
+            job.job_notes = request.POST.get('job_notes')
+            job.mm8_notes = request.POST.get('mm8_notes')
+            job.mm8_quantity = request.POST.get('mm8_quantity')
+            job.mm18_notes = request.POST.get('mm18_notes')
+            job.mm18_quantity = request.POST.get('mm18_quantity')
+
+        job.save()
+
+        # Update machine notes
+        cnc_machines = CNCMachine.objects.filter(job_id=job_id)
+        for machine in cnc_machines:
+            machine_notes = request.POST.get(f'machine_notes_{machine.cnc_machine_id}', None)
+            if machine_notes is not None:
+                machine.notes = machine_notes
+                machine.save()
+                
+        return redirect('job_detail', job_id=job.job_id)
+
+    # Fetch parts linked to the job
+    parts = Part.objects.filter(job=job)
+
+    # Fetch orders linked to those parts
+    orders = Order.objects.filter(part__job=job).distinct()
+
+    # Fetch picking info linked to the job
+    picking_infos = PickingProcess.objects.filter(job_id=job_id)
+
+    # Fetch CNC machine info linked to the job
+    cnc_infos = CNCMachine.objects.filter(job_id=job_id).values('cnc_machine_id', 'machine__machine_name', 'notes')
+    # Fetch CNC machine information for each part
+    cnc_status = CNCMachine.objects.filter(job=job).first()
+    machining_status = cnc_status.machine_stage if cnc_status else 'Not Available'
+
+    # Fetch workshop info linked to the job
+    # Fetch workshop info linked to the job
+    workshop_infos = Workshop.objects.filter(part__job=job).distinct()
+
+
+    return render(request, 'machining/job_detail_unedit.html', {
+        'job': job,
+        'parts': parts,
+        'orders': orders,
+        'picking_infos': picking_infos,
+        'cnc_infos': cnc_infos,
+        'machining_status': machining_status,
+        'workshop_infos': workshop_infos,
+        'cnc_machines': cnc_machines
+    })
+
+

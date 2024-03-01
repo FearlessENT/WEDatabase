@@ -26,11 +26,13 @@
     <form method="get" action="." class="search-form">
         <input type="text" name="customer_search" placeholder="Customer Name" value="{{ customer_query }}">
         <input type="text" name="order_search" placeholder="Order Number" value="{{ order_query }}">
-        <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}">
+        <!-- <input type="text" name="product_search" placeholder="Product Code" value="{{ product_query }}"> -->
+        <input type="text" name="custref_search" placeholder="CUSTREF" value="{{ custref_query }}">
         <!-- Preserve other filter values as hidden inputs -->
         <input type="hidden" name="status_filter" value="{{ status_filter }}">
         <input type="hidden" name="num_orders" value="{{ num_orders }}">
         <input type="hidden" name="sort_order" value="{{ sort_order }}">
+        
         <input type="submit" value="Search">
     </form>
     

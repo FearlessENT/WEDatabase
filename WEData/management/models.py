@@ -32,7 +32,7 @@ class Order(models.Model):
     user_notes = models.TextField(db_column='UserNotes', blank=True, null=True)
 
     class Meta:
-        db_table = 'order'
+        db_table = 'Order'
 
     def __str__(self):
         return str(self.sage_order_number)

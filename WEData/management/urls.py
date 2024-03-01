@@ -70,6 +70,7 @@ urlpatterns = [
     path('update_upholstery_comment2/<int:upholstery_id>/', views.update_upholstery_comment2, name='update_upholstery_comment2'),
     path('accounts/profile/', views.profile_view, name='profile'),
     path('', RedirectView.as_view(url=reverse_lazy('login'), permanent=False)),
+    path('job-view/<str:job_id>/', views.job_detail_unedit, name='job_detail_view'),
     
 
 

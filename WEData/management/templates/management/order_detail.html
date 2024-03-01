@@ -21,7 +21,7 @@
             </tr>
             <tr>
                 <th>Order Value:</th>
-                <td>£ {{ order.value|floatformat:2|intcomma }}</td>
+                <td>£{{ order.value|cut:"ï¿½"|cut:"�"|floatformat:2 }}</td>
 
             </tr>
 

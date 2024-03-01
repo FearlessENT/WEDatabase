@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+{% block content %}
+    <h2>Job Details: {{ job.job_name }}</h2>
+
+
+
+<!-- Display Assigned CNC Machine without the option to change -->
+<div class="padded-section">
+    <label for="id_cnc_machine">Assigned CNC Machine:</label>
+    <span id="id_cnc_machine" class='form-control form-control-select'>
+        {{ job.CNCMachine.machine_name|default:"None" }}
+    </span>
+</div>
+
+<!-- Display Job Notes without the option to edit -->
+<div class="flex-container">
+    <div class="flex-item">
+        <label for="id_job_notes">Job Notes:</label>
+        <textarea name="job_notes" class="form-control autoresize" rows="2" id="id_job_notes" class="autoresize" readonly>{{ job.job_notes }}</textarea>
+    </div>
+</div>
+
+<!-- Loop through and display CNC machine notes without the option to edit -->
+{% for machine in cnc_infos %}
+<div class="flex-item">
+    <label for="machine_notes_{{ machine.cnc_machine_id }}">Machine {{ machine.machine_name }} Notes:</label>
+    <textarea name="machine_notes_{{ machine.cnc_machine_id }}" id="machine_notes_{{ machine.cnc_machine_id }}" class="form-control autoresize" rows="2" placeholder="Add notes here" readonly>{{ machine.notes|default_if_none:"" }}</textarea>
+</div>
+{% endfor %}
+
+<!-- Display 8mm and 18mm fields without the option to edit -->
+<div class="flex-container">
+    <div class="flex-item">
+        <label for="id_mm8_notes">8mm Notes:</label>
+        <textarea name="mm8_notes" id="id_mm8_notes" placeholder="Add 8mm notes here" class="form-control autoresize" rows="2" readonly>{{ job.mm8_notes }}</textarea>
+    </div>
+    <div class="flex-item">
+        <label for="id_mm8_quantity">8mm Quantity:</label>
+        <input type="text" name="mm8_quantity" id="id_mm8_quantity" placeholder="Enter quantity here" class="form-control" value="{{ job.mm8_quantity }}" readonly>
+    </div>
+</div>
+
+<div class="flex-container">
+    <div class="flex-item">
+        <label for="id_mm18_notes">18mm Notes:</label>
+        <textarea name="mm18_notes" id="id_mm18_notes" placeholder="Add 18mm notes here" class="form-control autoresize" rows="2" readonly>{{ job.mm18_notes }}</textarea>
+    </div>
+    <div class="flex-item">
+        <label for="id_mm18_quantity">18mm Quantity:</label>
+        <input type="text" name="mm18_quantity" id="id_mm18_quantity" placeholder="Enter quantity here" class="form-control" value="{{ job.mm18_quantity }}" readonly>
+    </div>
+</div>
+
+
+
+
+
+
+    <h3>Parts in this Job</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Part ID</th>
+                <th>Order Number</th>
+                <th>Product Code</th>
+                <th>Product Description</th>
+                <th>8mm Status</th>
+                <th>18mm Status</th>
+                <th>Picking Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part in parts %}
+                <tr>
+                    <td>{{ part.part_id }}</td>
+                    <td>
+                        <a>{{ part.sage_order_number.sage_order_number }}</a>
+                    </td>
+                    <td>{{ part.product_code.product_code }}</td>
+                    <td>{{ part.product_code.product_description }}</td>
+                    <!-- 8mm Status with Coloring Scheme -->
+                    <td class="{% if part.job.mm8_status == 'Machined' %}status-complete
+                               {% elif part.job.mm8_status == 'On Hold' %}status-other
+                               {% elif part.job.mm8_status == 'Waiting' %}status-waiting
+                               {% else %}status-other{% endif %}">
+                        {{ part.job.mm8_status|default_if_none:"Not Available" }}
+                    </td>
+                    <!-- 18mm Status with Coloring Scheme -->
+                    <td class="{% if part.job.mm18_status == 'Machined' %}status-complete
+                               {% elif part.job.mm18_status == 'On Hold' %}status-other
+                               {% elif part.job.mm18_status == 'Waiting' %}status-waiting
+                               {% else %}status-other{% endif %}">
+                        {{ part.job.mm18_status|default_if_none:"Not Available" }}
+                    </td>
+                    <!-- Picking Status with Coloring Scheme -->
+                    {% with picking_status=part.job.pickingprocess_set.first.picking_status|default:part.picking_status %}
+                        <td class="{% if picking_status == 'Picked' %}status-complete
+                                {% elif picking_status == 'In Progress' %}status-other
+                                {% elif picking_status == 'Waiting' %}status-waiting
+                                {% else %}status-other{% endif %}">
+                            {{ picking_status|default:"Not Available" }}
+                        </td>
+                    {% endwith %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+
+
+
+
+
+
+
+
+
+
+
+{% endblock %}
+{% block javascript %}
+{% endblock %}
