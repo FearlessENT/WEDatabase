@@ -40,6 +40,6 @@ EXPOSE 8000
 
 RUN echo "running gunicorn"
 # Start the Django development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-# CMD ["gunicorn", "WEData.wsgi:application", "--bind", "0.0.0.0:8000"]
+# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn", "WEData.wsgi:application", "--bind", "0.0.0.0:8000"]
 

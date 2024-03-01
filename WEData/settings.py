@@ -24,13 +24,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-4aqtz-b3abvi)szg33f8$v#lz42ozxz2f-c9c%07goa(xm3(8i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-# ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
-ALLOWED_HOSTS = ['willowbrookeducation.net', 'www.willowbrookeducation.net', '77.68.114.134', 'web']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'web']
+# ALLOWED_HOSTS = ['willowbrookeducation.net', 'www.willowbrookeducation.net', '77.68.114.134', 'web']
 
-SECURE_SSL_REDIRECT = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# SECURE_SSL_REDIRECT = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 

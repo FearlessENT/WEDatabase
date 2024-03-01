@@ -9,7 +9,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=255, db_column='Name')
 
     class Meta:
-        db_table = 'customer'
+        db_table = 'Customer'
 
     def __str__(self):
         return self.name
@@ -47,7 +47,7 @@ class PartDescription(models.Model):
     weight = models.FloatField(db_column='Weight')
 
     class Meta:
-        db_table = 'partdescription'
+        db_table = 'PartDescription'
 
     def __str__(self):
         return self.product_code
@@ -63,7 +63,7 @@ class CNCMachineDescription(models.Model):
     machine_name = models.CharField(max_length=255, db_column='MachineName')
 
     class Meta:
-        db_table = 'cncmachinedescription'
+        db_table = 'CNCMachineDescription'
 
     def __str__(self):
         return self.machine_name
@@ -97,7 +97,7 @@ class Job(models.Model):
 
 
     class Meta:
-        db_table = 'job'
+        db_table = 'Job'
 
     def __str__(self):
         return self.job_name
@@ -118,7 +118,7 @@ class Part(models.Model):
     job = models.ForeignKey(Job, on_delete=models.CASCADE, db_column='JOBID')
 
     class Meta:
-        db_table = 'part'
+        db_table = 'Part'
 
     def __str__(self):
         return str(self.part_id)
@@ -157,7 +157,7 @@ class CNCMachine(models.Model):
     total_pieces = models.IntegerField(db_column='TotalPieces')
 
     class Meta:
-        db_table = 'cncmachine'
+        db_table = 'CNCMachine'
 
     def __str__(self):
         return str(self.cnc_machine_id)
@@ -173,7 +173,7 @@ class PickingProcess(models.Model):
     notes = models.TextField(db_column='Notes')
 
     class Meta:
-        db_table = 'pickingprocess'
+        db_table = 'PickingProcess'
 
     def __str__(self):
         return str(self.picking_id)
@@ -185,7 +185,7 @@ class WorkshopTypes(models.Model):
     workshop_name = models.CharField(max_length=255, db_column='WorkshopName')
 
     class Meta:
-        db_table = 'workshoptypes'
+        db_table = 'WorkshopTypes'
 
     def __str__(self):
         return self.workshop_name
@@ -201,7 +201,7 @@ class Workshop(models.Model):
     notes = models.TextField(db_column='Notes')
 
     class Meta:
-        db_table = 'workshop'
+        db_table = 'Workshop'
 
     def __str__(self):
         return f"Workshop ID: {self.workshop_id.workshop_name}, Part ID: {self.part.part_id}"

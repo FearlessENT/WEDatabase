@@ -16,12 +16,11 @@ services:
       - ./initdb:/docker-entrypoint-initdb.d
     restart: unless-stopped
 
-    
   web:
     build: .
     container_name: django_app
     ports:
-      - "80:80"
+      - "8000:8000"  # Changed to 8000:8000 to avoid conflict with Nginx listening on port 80
     depends_on:
       - db
     environment:
@@ -36,30 +35,20 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_HOST: db
       DB_PORT: 3306
-    # volumes:
-    #   - ./WEData:/app
-
-
+    volumes:
+      - static_volume:/app/static  # Define where Django collects static files
 
   nginx:
-    image: nginx:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     container_name: nginx
     ports:
       - "80:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
-      - static_volume:/app/static
-      # - media_volume:/app/media
     depends_on:
       - web
-
-
-
-
-
-
-
-
+    volumes:
+      - static_volume:/app/static
 
 volumes:
   db_data:
@@ -68,3 +57,4 @@ volumes:
       type: 'none'
       device: ${DB_VOLUME_PATH}
       o: 'bind'
+  static_volume: {}
