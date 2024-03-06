@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}Order - {{ order.sage_order_number }}{% endblock %}
 {% load humanize %}
 
 {% block content %}
@@ -42,6 +43,13 @@
                     {% endif %}
                 </td>
             </tr>
+
+            <tr>
+                <th>Days Old:</th>
+                <td>{{ days_old }}</td>
+            </tr>
+            
+            
 
 
 
@@ -100,28 +108,23 @@
 
             
             
-            <td class="{% if part.department != 'Assembly' %}status-complete
-                        {% elif part.job.mm8_status == 'Machined' %}status-complete
+            <!-- 8mm Status with Coloring Scheme, adapted from your working example -->
+            <td class="{% if part.job.mm8_status == 'Machined' %}status-complete
                         {% elif part.job.mm8_status == 'On Hold' %}status-other
                         {% elif part.job.mm8_status == 'Waiting' %}status-waiting
                         {% else %}status-other{% endif %}">
-                {% if part.department == 'Assembly' %}
-                    {{ part.job.mm8_status|default:"" }}
-                {% endif %}
+                {{ part.job.mm8_status|default:"Not Available" }}
             </td>
 
 
 
 
 
-            <td class="{% if part.department != 'Assembly' %}status-complete
-                        {% elif part.job.mm18_status == 'Machined' %}status-complete
+            <td class="{% if part.job.mm18_status == 'Machined' %}status-complete
                         {% elif part.job.mm18_status == 'On Hold' %}status-other
                         {% elif part.job.mm18_status == 'Waiting' %}status-waiting
                         {% else %}status-other{% endif %}">
-                {% if part.department == 'Assembly' %}
-                    {{ part.job.mm18_status|default:"" }}
-                {% endif %}
+                {{ part.job.mm18_status|default:"Not Available" }}
             </td>
 
 
@@ -130,20 +133,14 @@
 
 
 
-            {% with job_picking_status=part.job.pickingprocess_set.first.picking_status|default_if_none:"" %}
-                <td class="{% if part.department != 'Assembly' %}status-complete
-                            {% elif job_picking_status == 'Picked' or part.picking_status == 'Picked' %}status-complete
-                            {% elif job_picking_status == 'On Hold' or part.picking_status == 'On Hold' %}status-other
-                            {% elif job_picking_status == 'Waiting' or part.picking_status == 'Waiting' %}status-waiting
-                            {% else %}status-other{% endif %}">
-                    {% if part.department == 'Assembly' %}
-                        {% if job_picking_status %}
-                            {{ job_picking_status }}
-                        {% else %}
-                            {{ part.picking_status|default:"" }}
-                        {% endif %}
-                    {% endif %}
-                </td>
+                    <!-- Picking Status with Coloring Scheme, using with block for clarity -->
+            {% with picking_status=part.job.pickingprocess_set.first.picking_status|default:part.picking_status %}
+            <td class="{% if picking_status == 'Picked' %}status-complete
+                    {% elif picking_status == 'On Hold' %}status-other
+                    {% elif picking_status == 'Waiting' %}status-waiting
+                    {% else %}status-other{% endif %}">
+                {{ picking_status|default:"Waiting" }}
+            </td>
             {% endwith %}
 
 

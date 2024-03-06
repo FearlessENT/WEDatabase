@@ -340,10 +340,13 @@ def order_detail(request, sage_order_number):
     # Fetch the order using its sage order number
     order = get_object_or_404(Order, sage_order_number=sage_order_number)
 
+    # Calculate days since the order date
+    current_date = timezone.now().date()
+    order_date = order.order_date
+    days_old = (current_date - order_date).days
+
     # Fetch parts related to the order and use select_related for efficiency
-    # This assumes each part has one direct relation to product_code and job
-    # Adjust the prefetch_related or select_related based on your actual relationships
-    parts = Part.objects.filter(sage_order_number=order)
+    parts = Part.objects.filter(sage_order_number=order).select_related('product_code', 'job')
 
     codes = []
     if order.order_notes:
@@ -357,8 +360,8 @@ def order_detail(request, sage_order_number):
         'order': order,
         'parts': parts,
         'codes': codes,
+        'days_old': days_old,  # Pass days_old to the template
     })
-
 
 
 
@@ -564,7 +567,7 @@ def job_list(request):
     if job_query:
         jobs = jobs.filter(job_name__icontains=job_query)
 
-    jobs = jobs.order_by('-newest_order_date')
+    jobs = jobs.order_by('-job_id')
 
     num_jobs = int(request.GET.get('num_jobs', 30))  # Default to 30 jobs per page
     show_more = request.GET.get('show_more', False)
@@ -624,32 +627,42 @@ from .forms import CreateJobForm
 from .models import Job, Part
 
 
+
 @login_required
 @user_passes_test(is_job)
 def create_job(request):
     if request.method == 'POST':
         form = CreateJobForm(request.POST)
         if form.is_valid():
-            new_job = form.save()
-
-            cnc_machine_description = form.cleaned_data.get('CNCMachine')
-            if cnc_machine_description:
-                new_job.CNCMachine = cnc_machine_description
+            with transaction.atomic():  # Ensures database integrity
+                # Create the job with initial mm8 and mm18 statuses set to "Waiting"
+                new_job = form.save(commit=False)  # Do not commit/save immediately to the database
+                new_job.mm8_status = 'Waiting'
+                new_job.mm18_status = 'Waiting'
                 new_job.save()
 
-                # Create a new CNCMachine entry for this job
-                CNCMachine.objects.create(
-                    machine=cnc_machine_description,
-                    job=new_job
+                cnc_machine_description = form.cleaned_data.get('CNCMachine')
+                if cnc_machine_description:
+                    # Assuming the CNCMachine model is linked to the job and doesn't require immediate status updates
+                    CNCMachine.objects.create(
+                        machine=cnc_machine_description,
+                        job=new_job
+                    )
+
+                # Assign parts to the new job only if selected
+                selected_parts = request.session.get('selected_parts', [])
+                if selected_parts:
+                    Part.objects.filter(part_id__in=selected_parts).update(job=new_job)
+
+                # Initialize picking process for the job with the default status "Waiting"
+                PickingProcess.objects.create(
+                    job=new_job,
+                    picking_status='Waiting',  # Set the initial status to "Waiting"
+                    notes='Initial picking status set.'  # Optional note
                 )
 
-            # Assign parts to the new job only if selected
-            selected_parts = request.session.get('selected_parts', [])
-            if selected_parts:
-                Part.objects.filter(part_id__in=selected_parts).update(job=new_job)
-
-            # Clear the temporary storage
-            request.session.pop('selected_parts', None)
+                # Clear the temporary storage
+                request.session.pop('selected_parts', None)
 
             return redirect('job_list')
     else:
@@ -667,7 +680,6 @@ def create_job(request):
         'form': form,
         'unassigned_parts': unassigned_parts,
     })
-
 
 
 
@@ -1119,8 +1131,14 @@ from django.db.models import Prefetch
 def picking_department(request):
     picking_status_filter = request.GET.get('picking_status')
     sort_order = request.GET.get('sort_order', 'newest')
+    search_query = request.GET.get('search', '')
+    if 'clear' in request.GET:
+        search_query = ''
 
-    picking_processes = PickingProcess.objects.select_related('job__CNCMachine').all()
+    # Base queryset filtering jobs based on machining status
+    picking_processes = PickingProcess.objects.select_related('job__CNCMachine').filter(
+        ~Q(job__mm8_status='Waiting') | ~Q(job__mm18_status='Waiting')
+    ).distinct()
 
     # Apply picking status filter if provided
     if picking_status_filter:
@@ -1129,26 +1147,31 @@ def picking_department(request):
         else:
             picking_processes = picking_processes.filter(picking_status=picking_status_filter)
 
-    # Adjust the query to sort by the PickingProcess primary key for most recent vs oldest
+    # Apply search query if provided
+    if search_query:
+        picking_processes = picking_processes.filter(
+            Q(job__job_name__icontains=search_query) |
+            Q(job__CNCMachine__machine_name__icontains=search_query)
+        )
+
+    # Sort order
     if sort_order == 'newest':
         picking_processes = picking_processes.order_by('-picking_id')
     elif sort_order == 'oldest':
         picking_processes = picking_processes.order_by('picking_id')
 
-    # Pagination setup
-    num_items = int(request.GET.get('num_jobs', 20))  # Adjust parameter name as needed
+    # Pagination
+    num_items = int(request.GET.get('num_jobs', 20))
     paginator = Paginator(picking_processes, num_items)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
     context = {
         'page_obj': page_obj,
         'current_filter': picking_status_filter,
-        'sort_order': sort_order
+        'sort_order': sort_order,
+        'search_query': search_query  # Ensure to pass the search query back to the template
     }
     return render(request, 'picking/picking_department.html', context)
-
-
-
 
 
 

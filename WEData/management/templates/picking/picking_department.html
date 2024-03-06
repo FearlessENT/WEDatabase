@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block title %}Picking{% endblock %}
 
 {% block content %}
 <h2>Picking Department</h2>
@@ -30,6 +31,18 @@
         <input type="hidden" name="picking_status" value="{{ current_filter }}">
     </form>
 </div>
+
+
+
+
+<form method="get" action="" class="search-form">
+    <input type="text" name="search" placeholder="Search Jobs" value="{{ search_query }}">
+    <input type="submit" value="Search">
+    <input type="submit" name="clear" value="Clear">
+    <input type="hidden" name="picking_status" value="{{ current_filter }}">
+    <input type="hidden" name="sort_order" value="{{ sort_order }}">
+    <input type="hidden" name="num_jobs" value="{{ page_obj.paginator.per_page }}">
+</form>
 
 <table>
     <thead>
@@ -89,17 +102,13 @@
 </table>
 
 <form method="get" action="{% url 'picking_department' %}">
-    <!-- Hidden input for current filter -->
     <input type="hidden" name="picking_status" value="{{ current_filter }}">
-
-    <!-- Hidden input for number of jobs, incrementing the current count -->
-    <input type="hidden" name="num_jobs" value="{{ page_obj.paginator.per_page|add:20 }}">
-
-    <!-- Show More button -->
-    <button type="submit" id="show-more">Show More</button>
+    <input type="hidden" name="search" value="{{ search_query }}"> <!-- Include the current search query -->
     <input type="hidden" name="sort_order" value="{{ sort_order }}">
+    <!-- Adjust num_jobs to add more to the current per_page, or simply keep it for standard pagination -->
+    <input type="hidden" name="num_jobs" value="{{ page_obj.paginator.per_page|add:20 }}">
+    <button type="submit" id="show-more">Show More</button>
 </form>
-
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
