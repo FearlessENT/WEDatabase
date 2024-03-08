@@ -65,9 +65,12 @@
             <th>Product Code</th>
             <th>Delivery Postcode</th>
             <th>Product Description</th>
+            <th>Sage Comment 1</th>
+            <th>Sage Comment 2</th>
             <th>Workshop Notes</th>
             <th>Picking Status</th>
             <th>Assembly Status</th>
+            <th>Days Old</th>
             
             <!-- Add more headers if needed -->
         </tr>
@@ -80,6 +83,28 @@
             <td class="searchable">{{ workshop.part.product_code.product_code }}</td>
             <td class="searchable">{{ workshop.part.sage_order_number.delivery_postcode }}</td>
             <td class="searchable">{{ workshop.part.product_code.product_description }}</td>
+            <td>
+                <div class="notes-container">
+                    <form method="post" action="{% url 'update_part_sage_comment1' workshop.part.part_id %}">
+                        {% csrf_token %}
+                        <textarea name="sage_comment1" class="autoresize" placeholder="">{{ workshop.part.sage_comment1|default_if_none:"" }}</textarea>
+                        <input type="hidden" name="part_id" value="{{ workshop.part.part_id }}">
+                        <input type="submit" value="Save" class="save-btn">
+                    </form>
+                </div>
+                
+            </td>
+            <td>
+                <div class="notes-container">
+                    <form method="post" action="{% url 'update_part_sage_comment2' workshop.part.part_id %}">
+                        {% csrf_token %}
+                        <textarea name="sage_comment2" class="autoresize" placeholder="">{{ workshop.part.sage_comment2|default_if_none:"" }}</textarea>
+                        <input type="hidden" name="part_id" value="{{ workshop.part.part_id }}">
+                        <input type="submit" value="Save" class="save-btn">
+                    </form>
+                </div>
+                
+            </td>
             <td>
                 <div class="notes-container">
                     <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
@@ -98,7 +123,7 @@
                     {% endwith %}">
                 <!-- Display Job Name -->
                 {% if workshop.part.job %}
-                    <a href="{% url 'job_detail' workshop.part.job.job_id %}">{{ workshop.part.job.job_name }}</a>
+                    <a href="{% url 'job_detail_view' workshop.part.job.job_id %}">{{ workshop.part.job.job_name }}</a>
                 {% else %}
                     Not Assigned
                 {% endif %}
@@ -119,6 +144,7 @@
                     </form>
                 </div>
             </td>
+            <td>{{ workshop.days_old.days }}</td>
 
         </tr>
         {% endfor %}

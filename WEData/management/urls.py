@@ -71,6 +71,8 @@ urlpatterns = [
     path('accounts/profile/', views.profile_view, name='profile'),
     path('', RedirectView.as_view(url=reverse_lazy('login'), permanent=False)),
     path('job-view/<str:job_id>/', views.job_detail_unedit, name='job_detail_view'),
+    path('update-part-sage-comment1/<int:part_id>/', views.update_part_sage_comment1, name='update_part_sage_comment1'),
+    path('update-part-sage-comment2/<int:part_id>/', views.update_part_sage_comment2, name='update_part_sage_comment2'),
     
 
 

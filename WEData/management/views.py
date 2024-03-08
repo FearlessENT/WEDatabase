@@ -124,7 +124,16 @@ def clean_value(value):
 
 
 
+from django.db.models import F, Func, IntegerField
+from django.db.models.functions import Now
+from django.utils.timezone import now
+class Days(Func):
+    function = 'DATEDIFF'
+    template = '%(function)s(%(expressions)s)'
+    output_field = IntegerField()
 
+    def __init__(self, expression, **extra):
+        super().__init__(expression, Now(), **extra)
 
 
 
@@ -346,7 +355,8 @@ def order_detail(request, sage_order_number):
     days_old = (current_date - order_date).days
 
     # Fetch parts related to the order and use select_related for efficiency
-    parts = Part.objects.filter(sage_order_number=order).select_related('product_code', 'job')
+    parts = Part.objects.filter(sage_order_number=order)
+    # .select_related('product_code', 'job')
 
     codes = []
     if order.order_notes:
@@ -1283,7 +1293,16 @@ def assembly_department(request):
         search_query = ''
 
     # Start with the base query for workshops
-    workshops_query = Workshop.objects.filter(workshop_id__workshop_name="assembly").select_related('part', 'part__job')
+    workshop_type = WorkshopTypes.objects.get(workshop_name="Assembly")
+    workshops_query = Workshop.objects.filter(workshop_id=workshop_type).select_related(
+        'part__sage_order_number'
+    ).annotate(
+        # Use timezone.now().date() instead of Now() and ensure the date subtraction works correctly
+        days_old=ExpressionWrapper(
+            Cast(timezone.now().date(), output_field=fields.DateField()) - F('part__sage_order_number__order_date'),
+            output_field=DurationField()
+        )
+    )
 
     # Apply search filter
     if search_query:
@@ -1473,7 +1492,9 @@ def update_assembly_notes(request):
 
 
 
-
+from django.utils import timezone
+from django.db.models import ExpressionWrapper, F, DurationField
+from django.db.models.functions import Cast
 
 
 
@@ -1488,8 +1509,17 @@ def minikitchen_department(request):
     if 'clear' in request.GET:
         search_query = ''
 
+
     workshop_type = WorkshopTypes.objects.get(workshop_name="Minikitchen")
-    workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
+    workshops_query = Workshop.objects.filter(workshop_id=workshop_type).select_related(
+        'part__sage_order_number'
+    ).annotate(
+        # Use timezone.now().date() instead of Now() and ensure the date subtraction works correctly
+        days_old=ExpressionWrapper(
+            Cast(timezone.now().date(), output_field=fields.DateField()) - F('part__sage_order_number__order_date'),
+            output_field=DurationField()
+        )
+    )
 
     if search_query:
         workshops_query = workshops_query.filter(
@@ -1551,7 +1581,15 @@ def plywood_department(request):
         search_query = ''
     
     workshop_type = WorkshopTypes.objects.get(workshop_name="Plywood")
-    workshops_query = Workshop.objects.filter(workshop_id=workshop_type)
+    workshops_query = Workshop.objects.filter(workshop_id=workshop_type).select_related(
+        'part__sage_order_number'
+    ).annotate(
+        # Use timezone.now().date() instead of Now() and ensure the date subtraction works correctly
+        days_old=ExpressionWrapper(
+            Cast(timezone.now().date(), output_field=fields.DateField()) - F('part__sage_order_number__order_date'),
+            output_field=DurationField()
+        )
+    )
 
     # Updated filter based on search query if provided
     if search_query:
@@ -2261,3 +2299,51 @@ def job_detail_unedit(request, job_id):
     })
 
 
+
+
+
+
+from django.shortcuts import redirect, get_object_or_404
+from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .models import Part
+
+@login_required
+def update_part_sage_comment1(request, part_id):
+    if request.method == 'POST':
+        sage_comment1 = request.POST.get('sage_comment1')
+
+        part = get_object_or_404(Part, part_id=part_id)
+        part.sage_comment1 = sage_comment1
+        part.save()
+
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            return redirect('profile')  # Adjust to your actual default redirect URL
+
+    return redirect('profile')  # Adjust to your actual default redirect URL
+
+
+
+
+
+
+
+@login_required
+def update_part_sage_comment2(request, part_id):
+    if request.method == 'POST':
+        sage_comment2 = request.POST.get('sage_comment2')
+
+        part = get_object_or_404(Part, part_id=part_id)
+        part.sage_comment2 = sage_comment2
+        part.save()
+
+        referer_url = request.META.get('HTTP_REFERER')
+        if referer_url:
+            return HttpResponseRedirect(referer_url)
+        else:
+            return redirect('profile')  # Adjust to your actual default redirect URL
+
+    return redirect('profile')  # Adjust to your actual default redirect URL

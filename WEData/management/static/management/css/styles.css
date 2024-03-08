@@ -12,23 +12,58 @@ body {
     padding: 1em 0;
 }
 
+
+
+
+
 .nav {
     background-color: #555;
-    overflow: hidden;
+    display: flex;
+    justify-content: space-between; /* Ensures main links and profile are on opposite ends */
+    align-items: center; /* Aligns items vertically in the center */
+    padding: 0 10px; /* Optional: Adds some padding on the left and right ends */
 }
 
-.nav a {
-    float: left;
-    display: block;
+.nav-links, .profile-link {
+    display: flex;
+    align-items: center;
+}
+
+.nav-links a {
     color: white;
     text-align: center;
     padding: 14px 16px;
     text-decoration: none;
+    white-space: nowrap; /* Prevents the text from wrapping onto multiple lines */
+    border-right: 1px solid rgba(255, 255, 255, 0.2); /* Adds a light border to the right of each link */
+}
+
+.nav-links a:last-child {
+    border-right: none; /* Removes the border from the last link in the list */
+}
+
+
+.nav-links a {
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    white-space: nowrap; /* Prevents the text from wrapping onto multiple lines */
+}
+
+.profile-link a {
+    color: white;
+    padding: 14px 16px;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .nav a:hover {
     background-color: #777;
 }
+
+
+
 
 .container {
     padding: 15px;

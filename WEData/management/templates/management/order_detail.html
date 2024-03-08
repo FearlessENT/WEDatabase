@@ -189,6 +189,116 @@
         </tr>
         {% endfor %}
     </table>
+
+
+
+
+
+
+    <h2>Parts and Notes</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Part ID</th>
+                <th>Product Code</th>
+                <th>Product Description</th>
+                <th>Sage Comment 1</th>
+                <th>Sage Comment 2</th>
+                <th>CNC Machine Notes</th>
+                <th>Assembly Notes</th>
+                <th>Upholstery Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for part in parts %}
+            <tr>
+                <td>{{ part.part_id }}</td>
+                <td>{{ part.product_code.product_code }}</td>
+                <td>
+                    {{ part.product_code.product_description|default:"Description not available" }}
+                </td>
+                <!-- Sage Comment 1 Editable Form -->
+                <td>
+                    <div class="notes-container">
+                        <form method="post" action="{% url 'update_part_sage_comment1' part.part_id %}" class="flex-item">
+                            {% csrf_token %}
+                            <textarea name="sage_comment1" id="sage_comment1_{{ part.part_id }}" class="form-control autoresize" rows="2" placeholder="Add notes here">{{ part.sage_comment1|default_if_none:"" }}</textarea>
+                            <button type="submit" class="save-btn">Save</button>
+                        </form>
+                    </div>
+                </td>
+
+                <!-- Sage Comment 2 Editable Form -->
+                <td>
+                    <div class="notes-container">
+                        <form method="post" action="{% url 'update_part_sage_comment2' part.part_id %}" class="flex-item">
+                            {% csrf_token %}
+                            <textarea name="sage_comment2" id="sage_comment2_{{ part.part_id }}" class="form-control autoresize" rows="2" placeholder="Add notes here">{{ part.sage_comment2|default_if_none:"" }}</textarea>
+                            <button type="submit" class="save-btn">Save</button>
+                        </form>
+                    </div>
+                </td>
+                </div>
+                <!-- CNC Machine Notes Editable Form (Assuming 1 CNC Machine per Job) -->
+                <div class="notes-container">
+                <td>
+                    {% for machine in cnc_infos %}
+                        <form method="post" action="{% url 'update_cnc_machine_notes' machine.cnc_machine_id %}">
+                            {% csrf_token %}
+                            <div class="flex-item">
+                                <textarea name="machine_notes" id="machine_notes_{{ machine.cnc_machine_id }}" class="form-control autoresize" rows="2" placeholder="Add notes here">{{ machine.notes|default_if_none:"" }}</textarea>
+                                <input type="hidden" name="cnc_machine_id" value="{{ machine.cnc_machine_id }}">
+                                <button type="submit" class="save-btn">Save</button>
+                            </div>
+                        </form>
+                    {% endfor %}
+                </td>
+                </div>
+                <!-- Assembly Notes Editable Forms -->
+                <div class="notes-container">
+                    <td>
+                        <div class="notes-container">
+                            {% for workshop in part.workshops.all %}
+                                <form method="post" action="{% url 'update_workshop_notes' workshop.id %}">
+                                    {% csrf_token %}
+                                    <div class="flex-item">
+
+                                        <textarea name="workshop_notes" id="workshop_notes_{{ workshop.id }}" class="form-control autoresize" rows="2" placeholder="Add notes here">{{ workshop.notes|default_if_none:"" }}</textarea>
+                                        <input type="hidden" name="workshop_id" value="{{ workshop.id }}">
+                                        <button type="submit" class="save-btn">Save</button>
+                                    </div>
+                                </form>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </div>
+                <!-- Upholstery Notes Editable Forms -->
+                <div class="notes-container">
+                    <td>
+                        <div class="notes-container">
+                            {% for upholstery in part.upholsteries.all %}
+                                <form method="post" action="{% url 'update_upholstery_notes' upholstery.upholstery_id %}">
+                                    {% csrf_token %}
+                                    <div class="flex-item">
+
+                                        <textarea name="upholstery_notes" id="upholstery_notes_{{ upholstery.upholstery_id }}" class="form-control autoresize" rows="2" placeholder="Add notes here">{{ upholstery.comments|default_if_none:"" }}</textarea>
+                                        <input type="hidden" name="upholstery_id" value="{{ upholstery.upholstery_id }}">
+                                        <button type="submit" class="save-btn">Save</button>
+                                    </div>
+                                </form>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </div>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+
+
+
     
 {% endblock %}
 

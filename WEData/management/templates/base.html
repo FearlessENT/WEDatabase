@@ -17,63 +17,55 @@
 
 
     <div class="nav">
-
-        <a href="{% url 'profile' %}">Profile</a>
-
-        {% if is_picking %}
-            <a href="{% url 'picking_department' %}">Picking</a>
-            <!-- More picking-specific links -->
-        {% endif %}
-        
-        {% if is_assembly %}
-            <a href="{% url 'assembly_department' %}">Assembly</a>
-            <!-- More assembly-specific links -->
-        {% endif %}
-        
-        {% if is_upholstery %}
-            <a href="{% url 'upholstery_department' %}">Upholstery</a>
-            <!-- More upholstery-specific links -->
-        {% endif %}
-
-
-
-
-        {% if is_cncmachining %}
-            <a href="{% url 'cnc_operator_jobs' %}">CNC Machining</a>
-        {% endif %}
-
-        {% if is_orders %}
-            <a href="{% url 'order_list' %}">Orders</a>
-        {% endif %}
-
-        {% if is_job %}
-            <a href="{% url 'job_list' %}">Jobs</a>
-            <a href="{% url 'create_job' %}">Create Job</a>
-        {% endif %}
-
-        {% if is_plywood %}
-            <a href="{% url 'plywood_department' %}">Plywood</a>
-        {% endif %}
-
-        {% if is_minikitchen %}
-            <a href="{% url 'minikitchen_department' %}">MiniKitchen</a>
-        {% endif %}
-
-
-        {% if is_misc %}
-            <a href="{% url 'assign_misc_parts' %}">Misc</a>
-        {% endif %}
-
-
-        {% if is_import %}
-            <a href="{% url 'import_data' %}">Import</a>
-        {% endif %}
-
-
-
-
-
+        <div class="nav-links">
+            {% if is_orders %}
+                <a href="{% url 'order_list' %}">Orders</a>
+            {% endif %}
+    
+            {% if is_job %}
+                <a href="{% url 'job_list' %}">Jobs</a>
+                <a href="{% url 'create_job' %}">Create Job</a>
+            {% endif %}
+    
+            {% if is_cncmachining %}
+                <a href="{% url 'cnc_operator_jobs' %}">CNC Machining</a>
+            {% endif %}
+    
+            {% if is_picking %}
+                <a href="{% url 'picking_department' %}">Picking</a>
+            {% endif %}
+    
+            {% if is_assembly %}
+                <a href="{% url 'assembly_department' %}">Assembly</a>
+            {% endif %}
+    
+            {% if is_upholstery %}
+                <a href="{% url 'upholstery_department' %}">Upholstery</a>
+            {% endif %}
+    
+            {% if is_plywood %}
+                <a href="{% url 'plywood_department' %}">Plywood</a>
+            {% endif %}
+    
+            {% if is_minikitchen %}
+                <a href="{% url 'minikitchen_department' %}">MiniKitchen</a>
+            {% endif %}
+    
+            {% if is_misc %}
+                <a href="{% url 'assign_misc_parts' %}">Misc</a>
+            {% endif %}
+    
+            {% if is_import %}
+                <a href="{% url 'import_data' %}">Import</a>
+            {% endif %}
+        </div>
+    
+        <div class="profile-link">
+            <a href="{% url 'profile' %}">Profile</a>
+        </div>
     </div>
+    
+    
 
 
 
