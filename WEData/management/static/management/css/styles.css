@@ -655,3 +655,87 @@ body {
     text-align: right;
     color: #777;
 }
+
+
+
+
+
+
+
+.table-container {
+    overflow-x: auto; /* Enables horizontal scrolling if the table overflows */
+    max-width: 100%;
+  }
+
+
+
+
+
+
+
+    /* Container for checkboxes */
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        gap: 20px; /* Space between checkboxes */
+        padding: 10px;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+    }
+
+    /* Custom checkbox styling */
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    /* Hide default checkbox */
+    .custom-checkbox input[type="checkbox"] {
+        display: none;
+    }
+
+    /* Custom box */
+    .custom-checkbox span {
+        display: inline-block;
+        height: 20px;
+        width: 20px;
+        background: #fff;
+        border: 2px solid #007bff;
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    /* Checkmark style */
+    .custom-checkbox input[type="checkbox"]:checked + span::before {
+        content: '✓';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #007bff;
+        font-size: 16px;
+    }
+
+    /* Label */
+    .custom-checkbox label {
+        margin-left: 8px;
+        cursor: pointer;
+    }
+
+    .update-button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-left: 20px; /* Add space between checkboxes and button */
+    }
+
+    .update-button:hover {
+        background-color: #0056b3;
+    }

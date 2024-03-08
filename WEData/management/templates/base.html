@@ -58,6 +58,10 @@
             {% if is_import %}
                 <a href="{% url 'import_data' %}">Import</a>
             {% endif %}
+
+            {% if is_routing %}
+                <a href="{% url 'routing' %}">Routing</a>
+            {% endif %}
         </div>
     
         <div class="profile-link">

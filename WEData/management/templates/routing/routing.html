@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Routing{% endblock %}
+
+
+{% block content %}
+<h2>Routing</h2>
+
+
+
+
+
+
+
+
+<div class="checkbox-container">
+    <label class="custom-checkbox">
+        <input type="checkbox" id="machined" name="status" checked>
+        <span></span>
+        <label for="machined">Machined</label>
+    </label>
+
+    <label class="custom-checkbox">
+        <input type="checkbox" id="picked" name="status" checked>
+        <span></span>
+        <label for="picked">Picked</label>
+    </label>
+
+    <label class="custom-checkbox">
+        <input type="checkbox" id="assembled" name="status" checked>
+        <span></span>
+        <label for="assembled">Assembled</label>
+    </label>
+
+    <button class="update-button" type="button" onclick="updateStatus()">Update</button>
+</div>
+
+
+
+
+
+<div class="filter-container">
+
+    <form method="get" action="" class="search-form">
+        <input type="text" name="search" placeholder="Sage Order Number" value="{{ search_query }}">
+        <input type="submit" value="Search">
+        <input type="submit" name="clear" value="Clear">
+    </form>
+    
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table class = "table-container">
+    <thead>
+        <tr>
+            <th>Order Number</th>
+            <th>Customer</th> <!-- This column will contain the mini-table -->
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in page_obj %}
+        <tr>
+            <td>
+                <span style="display: inline;">
+                    <a href="{% url 'order_detail' order.sage_order_number %}">{{ order.sage_order_number }}</a>
+                    <td>
+                        <a href="{% url 'customer_orders' order.customer.customer_id %}">{{ order.customer.name }}</a>
+                    </td>
+                    
+                </span>
+            </td>
+            <td>
+                <!-- Mini table for part details -->
+                <table class = "table-container">
+                    <thead>
+                        <tr>
+                            <th>Product Code</th>
+                            <th>Product Description</th>
+                            <th>Sage Comment 1</th>
+                            <th>Sage Comment 2</th>
+                            <th>Delivery Postcode</th>
+                            <th>Value</th>
+                            <th>Days Old</th>
+                            <th>Estimated Delivery WkC</th>
+                            <th>User Notes</th>
+                            <th>Prebooked Date</th>
+                            <th>Routed Date</th>
+                            <th>Routed Notes</th>
+                            <th>Select</th> <!-- Renamed from Action to Select -->
+                            <th>Dept</th>
+                            <th>Job</th>
+                            <th>8mm Status</th>
+                            <th>18mm Status</th>
+                            <th>Picking Status</th>
+                            <th>Assembly Status</th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for part in order.part_set.all %}
+                        <tr>
+                            <td>{{ part.product_code.product_code }}</td>
+                            <td>{{ part.product_code.product_description }}</td>
+                            <td>{{ part.sage_comment1 }}</td>
+                            <td>{{ part.sage_comment2 }}</td>
+                            <td>{{ order.delivery_postcode }}</td>
+                            <td>{{ order.value }}</td>
+                            <td>{{ part.days_old }}</td>
+                            <td>{{ order.estimated_delivery_wkc }}</td>
+                            <td>{{ order.user_notes }}</td>
+                            <td></td> <!-- Prebooked Date (placeholder) -->
+                            <td></td> <!-- Routed Date (placeholder) -->
+                            <td>
+                                <div class="notes-container">
+                                    <textarea name="routed_notes" placeholder="Enter routed notes" class="autoresize"></textarea>
+                                    <button type="submit">Save</button>
+                                </div>
+                            </td>
+                            <td>
+                                <!-- Checkbox for each part -->
+                                <input type="checkbox" name="select_part_{{ part.id }}" value="{{ part.id }}">
+                            </td>
+
+
+
+                            <td>{{ part.dept }}</td>
+
+                            
+                            <td class="{% if part.dept.lower != 'assembly' %}status-complete
+                                        {% elif not part.job %}status-waiting
+                                        {% endif %}">
+                                {% if part.dept.lower == 'assembly' and part.job %}
+                                    <a href="{% url 'job_detail' part.job.job_id %}">{{ part.job.job_name }}</a>
+                                {% elif part.dept.lower == 'assembly' and not part.job %}
+                                    <div style="background-color: inherit;">&nbsp;</div>
+                                {% else %}
+                                    <div style="background-color: inherit;">&nbsp;</div>
+                                {% endif %}
+                            </td>
+
+                            
+                            
+                            <!-- 8mm Status with Coloring Scheme, adapted from your working example -->
+                            <td class="{% if part.job.mm8_status == 'Machined' %}status-complete
+                                        {% elif part.job.mm8_status == 'On Hold' %}status-other
+                                        {% elif part.job.mm8_status == 'Waiting' %}status-waiting
+                                        {% else %}status-other{% endif %}">
+                                {{ part.job.mm8_status|default:"Not Available" }}
+                            </td>
+
+
+
+
+
+                            <td class="{% if part.job.mm18_status == 'Machined' %}status-complete
+                                        {% elif part.job.mm18_status == 'On Hold' %}status-other
+                                        {% elif part.job.mm18_status == 'Waiting' %}status-waiting
+                                        {% else %}status-other{% endif %}">
+                                {{ part.job.mm18_status|default:"Not Available" }}
+                            </td>
+
+
+
+
+
+
+
+                                    <!-- Picking Status with Coloring Scheme, using with block for clarity -->
+                            {% with picking_status=part.job.pickingprocess_set.first.picking_status|default:part.picking_status %}
+                            <td class="{% if picking_status == 'Picked' %}status-complete
+                                    {% elif picking_status == 'On Hold' %}status-other
+                                    {% elif picking_status == 'Waiting' %}status-waiting
+                                    {% else %}status-other{% endif %}">
+                                {{ picking_status|default:"Waiting" }}
+                            </td>
+                            {% endwith %}
+
+
+
+                            <td class="{% if part.dept|lower == 'upholstery' %}
+                                        {% if part.upholsteries.first.assembly_status == 'Waiting' %}status-waiting
+                                        {% elif part.upholsteries.first.assembly_status == 'On Hold' %}status-onhold
+                                        {% elif part.upholsteries.first.assembly_status == 'Printed' %}status-printed
+                                        {% elif part.upholsteries.first.assembly_status == 'Cut' %}status-cut
+                                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs filling (48 hrs)' %}status-sewn-needs-filling
+                                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs frame (48 hrs)' %}status-sewn-needs-frame-48hrs
+                                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs frame (5 Days)' %}status-sewn-needs-frame-5days
+                                        {% elif part.upholsteries.first.assembly_status == 'Sewn but needs frame (10 days)' %}status-sewn-needs-frame-10days
+                                        {% elif part.upholsteries.first.assembly_status == 'Goods Ready' or part.upholsteries.first.assembly_status == 'Built' %}status-complete
+                                        {% else %}status-other
+                                        {% endif %}
+                                    {% else %}
+                                        {% with workshop=part.workshops.first %}
+                                            {% if workshop.assembly_status == 'Built' %}status-complete
+                                            {% elif workshop.assembly_status == 'On Hold' %}status-onhold
+                                            {% elif workshop.assembly_status == 'Waiting' %}status-waiting
+                                            {% else %}status-other
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}">
+                                {% if part.dept|lower == "upholstery" %}
+                                    {{ part.upholsteries.first.assembly_status|default:"N/A" }}
+                                {% else %}
+                                    {% with workshop=part.workshops.first %}
+                                        {{ workshop.assembly_status|default:"N/A" }}
+                                    {% endwith %}
+                                {% endif %}
+                            </td>
+
+
+
+
+
+
+
+
+
+
+
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="14">No parts available for this order.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<div class="pagination-container">
+    {% if page_obj.has_next %}
+        <form method="get" action="">
+            <input type="hidden" name="num_items" value="{{ num_items|add:10 }}">
+            <button type="submit" name="show_more">Show More</button>
+        </form>
+    {% endif %}
+</div>
+
+{% endblock %}

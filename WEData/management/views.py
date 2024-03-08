@@ -2347,3 +2347,31 @@ def update_part_sage_comment2(request, part_id):
             return redirect('profile')  # Adjust to your actual default redirect URL
 
     return redirect('profile')  # Adjust to your actual default redirect URL
+
+
+
+
+
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from .models import Order
+
+def routing_view(request):
+    num_items = int(request.GET.get('num_items', 10))
+
+    parts_prefetch = Prefetch('part_set', queryset=Part.objects.select_related('product_code'))
+    orders_query = Order.objects.prefetch_related(parts_prefetch).order_by('pk')
+
+    paginator = Paginator(orders_query, num_items)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    # Iterate through orders to calculate days old for each part
+    for order in page_obj:
+        days_old = (now().date() - order.order_date).days
+        for part in order.part_set.all():
+            part.days_old = days_old  # Assigning days old to each part
+
+    return render(request, 'routing/routing.html', {
+        'page_obj': page_obj,
+        'num_items': num_items,
+    })

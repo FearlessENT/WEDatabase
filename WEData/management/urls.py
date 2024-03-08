@@ -73,6 +73,7 @@ urlpatterns = [
     path('job-view/<str:job_id>/', views.job_detail_unedit, name='job_detail_view'),
     path('update-part-sage-comment1/<int:part_id>/', views.update_part_sage_comment1, name='update_part_sage_comment1'),
     path('update-part-sage-comment2/<int:part_id>/', views.update_part_sage_comment2, name='update_part_sage_comment2'),
+    path('routing/', views.routing_view, name='routing'),
     
 
 

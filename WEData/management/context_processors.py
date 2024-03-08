@@ -14,6 +14,7 @@ def user_role_context(request):
         'is_minikitchen': request.user.groups.filter(name='Minikitchen').exists() or request.user.groups.filter(name='Admin').exists(),
         'is_misc': request.user.groups.filter(name='Misc').exists() or request.user.groups.filter(name='Admin').exists(),
         'is_import': request.user.groups.filter(name='Import').exists() or request.user.groups.filter(name='Admin').exists(),
+        'is_routing': request.user.groups.filter(name='Routing').exists() or request.user.groups.filter(name='Admin').exists(),
 
         # Add other roles as needed
     }
