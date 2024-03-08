@@ -50,25 +50,68 @@
 </div>
 
 
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUBx-qunXzCEwXf2CoQfCRWoE3dU1q6Wg&callback=initMap" type="text/javascript"></script>
 
 
 
+<!-- 
+
+<iframe
+  width="600"
+  height="450"
+  style="border:0"
+  loading="lazy"
+  allowfullscreen
+  referrerpolicy="no-referrer-when-downgrade"
+  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBcJWMimtyz7m-Q4Vr7xetKNo5KicPwTHY
+    &q=HP43XP">
+</iframe>
+ -->
 
 
+ <div class="map-controls">
+    <label class="custom-checkbox">
+        <input type="checkbox" id="toggleMap" checked>
+        Show Map
+    </label>
+</div>
+
+<div class="map-container" id="map" style="width: 100%; height: 25vh;"></div>
 
 
+ <script>
+    function initMap() {
+        var map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 15, // Adjust zoom level as needed
+        });
+    
+        var geocoder = new google.maps.Geocoder();
+        geocodeAddress(geocoder, map);
+    }
+    
+    function geocodeAddress(geocoder, map) {
+        var address = "PE9 3UT"; // Your target address
+        geocoder.geocode({'address': address}, function(results, status) {
+            if (status === 'OK') {
+                map.setCenter(results[0].geometry.location);
+                new google.maps.Marker({
+                    map: map,
+                    position: results[0].geometry.location
+                });
+            } else {
+                alert('Geocode was not successful for the following reason: ' + status);
+            }
+        });
+    }
+</script>
 
 
-
-
-
-
-
-
-
-
-
-
+<script>
+    document.getElementById('toggleMap').addEventListener('change', function() {
+        var mapContainer = document.getElementById('map');
+        mapContainer.style.display = this.checked ? 'block' : 'none';
+    });
+</script>
 
 
 
@@ -258,7 +301,7 @@
     {% if page_obj.has_next %}
         <form method="get" action="">
             <input type="hidden" name="num_items" value="{{ num_items|add:10 }}">
-            <button type="submit" name="show_more">Show More</button>
+            <button type="submit" name="show_more" class="show-more-button">Show More</button>
         </form>
     {% endif %}
 </div>

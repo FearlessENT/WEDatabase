@@ -739,3 +739,31 @@ body {
     .update-button:hover {
         background-color: #0056b3;
     }
+
+
+
+/* Style for the Show More button */
+.show-more-button {
+    background-color: #0074D9; /* Set your desired background color */
+    color: white; /* Text color */
+    border: none; /* Remove default button border */
+    padding: 10px 20px; /* Adjust padding as needed */
+    font-size: 14px; /* Font size */
+    cursor: pointer; /* Change cursor on hover */
+    border-radius: 5px; /* Rounded corners */
+    transition: background-color 0.3s ease; /* Smooth transition effect */
+}
+
+/* Hover effect */
+.show-more-button:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+}
+
+
+.map-controls {
+    margin-bottom: 20px; /* Adjust as needed for spacing */
+}
+
+.map-container {
+    display: block; /* Ensures the map is shown initially if checkbox is checked */
+}
