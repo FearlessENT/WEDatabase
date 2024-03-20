@@ -60,8 +60,13 @@
             {% endif %}
 
             {% if is_routing %}
-                <a href="{% url 'routing' %}">Routing</a>
+                <a href="{% url 'routing' %}">Create Route</a>
             {% endif %}
+
+            {% if is_routing %}
+                <a href="{% url 'routing' %}">Routes</a>
+            {% endif %}
+
         </div>
     
         <div class="profile-link">

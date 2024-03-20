@@ -767,3 +767,13 @@ body {
 .map-container {
     display: block; /* Ensures the map is shown initially if checkbox is checked */
 }
+
+
+
+input[type="date"] {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

@@ -175,8 +175,14 @@
                             <td>{{ part.days_old }}</td>
                             <td>{{ order.estimated_delivery_wkc }}</td>
                             <td>{{ order.user_notes }}</td>
-                            <td></td> <!-- Prebooked Date (placeholder) -->
-                            <td></td> <!-- Routed Date (placeholder) -->
+                            <td>
+                                <!-- Prebooked Date Picker -->
+                                <input type="date" id="prebookedDate" name="prebookedDate" onchange="updatePrebookedDate(this.value)">
+                            </td>
+                            <td>
+                                <!-- Routed Date Picker -->
+                                <input type="date" id="routedDate" name="routedDate" onchange="updateRoutedDate(this.value)">
+                            </td>
                             <td>
                                 <div class="notes-container">
                                     <textarea name="routed_notes" placeholder="Enter routed notes" class="autoresize"></textarea>
@@ -184,8 +190,9 @@
                                 </div>
                             </td>
                             <td>
-                                <!-- Checkbox for each part -->
-                                <input type="checkbox" name="select_part_{{ part.id }}" value="{{ part.id }}">
+                  
+                                
+                                <input class = "custom-checkbox" type="checkbox" name="select_part_{{ part.id }}" value="{{ part.id }}">
                             </td>
 
 
@@ -306,4 +313,22 @@
     {% endif %}
 </div>
 
+
+
+
+
+
+
+
+<script>
+    function updatePrebookedDate(date) {
+        console.log('Prebooked Date selected:', date);
+        // Implement your update logic here
+    }
+    
+    function updateRoutedDate(date) {
+        console.log('Routed Date selected:', date);
+        // Implement your update logic here
+    }
+    </script>
 {% endblock %}
