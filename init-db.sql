@@ -149,3 +149,29 @@ CREATE TABLE Upholstery (
     AssemblyNotes TEXT,
     FOREIGN KEY (PartID) REFERENCES Part(PartID)
 );
+
+
+
+
+
+
+
+
+
+
+CREATE TABLE Route (
+    route_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create the RoutePart table (Through-Model for Route and Part relationship with ordering)
+CREATE TABLE RoutePart (
+    route_id INT,
+    part_id INT,
+    `order` INT,
+    PRIMARY KEY (route_id, part_id),
+    FOREIGN KEY (route_id) REFERENCES Route(route_id),
+    FOREIGN KEY (part_id) REFERENCES Part(PartID),
+    UNIQUE INDEX route_part_order_unique (route_id, `order`) -- Ensure unique order within the same route
+);

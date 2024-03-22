@@ -244,3 +244,32 @@ class Upholstery(models.Model):
 
     def __str__(self):
         return f"Upholstery ID: {self.upholstery_id}"
+    
+
+
+
+
+
+
+class Route(models.Model):
+    route_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Route {self.name}"
+
+
+
+class RoutePart(models.Model):
+    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+    part = models.ForeignKey(Part, on_delete=models.CASCADE)
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ('route', 'order')  # Ensure unique order within the same route
+        db_table = 'route_part'
+
+    def __str__(self):
+        return f"{self.route.name} - Order {self.order}: Part {self.part.part_id}"

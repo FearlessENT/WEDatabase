@@ -9,34 +9,26 @@
 
 
 
-
-
-
-
-<div class="checkbox-container">
-    <label class="custom-checkbox">
-        <input type="checkbox" id="machined" name="status" checked>
-        <span></span>
+<form method="get" action="">
+    <div class="checkbox-container">
+        <!-- Include checkboxes for filtering -->
+        <input type="checkbox" id="machined" name="machined" value="on" {% if machined == 'on' %}checked{% endif %}>
         <label for="machined">Machined</label>
-    </label>
 
-    <label class="custom-checkbox">
-        <input type="checkbox" id="picked" name="status" checked>
-        <span></span>
+        <input type="checkbox" id="picked" name="picked" value="on" {% if picked == 'on' %}checked{% endif %}>
         <label for="picked">Picked</label>
-    </label>
 
-    <label class="custom-checkbox">
-        <input type="checkbox" id="assembled" name="status" checked>
-        <span></span>
+        <input type="checkbox" id="assembled" name="assembled" value="on" {% if assembled == 'on' %}checked{% endif %}>
         <label for="assembled">Assembled</label>
-    </label>
 
-    <button class="update-button" type="button" onclick="updateStatus()">Update</button>
-</div>
+        <!-- Include hidden inputs for retaining other query parameters like current page -->
+        <input type="hidden" name="page" value="{{ request.GET.page }}">
+        
+        <!-- Update button -->
+        <button type="submit">Update</button>
+    </div>
 
-
-
+</form>
 
 
 <div class="filter-container">

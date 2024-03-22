@@ -19,12 +19,18 @@
                 {% endfor %}
             </span>
         </div>
+        <!-- Logout Button Form -->
+        <div class="logout-button">
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="/" />
+                <button type="submit" class="login-button">Logout</button>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
-<style>
 
-</style>
 {% endblock %}

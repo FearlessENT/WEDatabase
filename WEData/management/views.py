@@ -2358,20 +2358,48 @@ from .models import Order
 
 def routing_view(request):
     num_items = int(request.GET.get('num_items', 10))
+    
+    # Retrieve checkbox states
+    machined = request.GET.get('machined', 'off')
+    picked = request.GET.get('picked', 'off')
+    assembled = request.GET.get('assembled', 'off')
+    
+    # Start with all orders
+    orders_query = Order.objects.all()
 
-    parts_prefetch = Prefetch('part_set', queryset=Part.objects.select_related('product_code'))
-    orders_query = Order.objects.prefetch_related(parts_prefetch).order_by('pk')
+    # Start with all orders and filter based on checkbox states
+    orders_query = Order.objects.all()
+    if machined == 'on':
+        # Filter for orders where associated parts' jobs have both mm8 and mm18 status as 'Machined'
+        orders_query = orders_query.filter(
+            part__job__mm8_status='Machined',
+            part__job__mm18_status='Machined'
+        ).distinct()
+        
+    if picked == 'on':
+        # Filter orders with parts that have been picked
+        orders_query = orders_query.filter(
+            part__job__pickingprocess__picking_status='Picked'
+        ).distinct()
 
+    if assembled == 'on':
+        # Filter orders based on assembly status, checking both upholstery and workshop assembly status
+        orders_query = orders_query.filter(
+            Q(part__upholsteries__assembly_status='Goods Ready') |
+            Q(part__workshops__assembly_status='Built')
+        ).distinct()
+
+
+
+    orders_query = orders_query.order_by('-pk')
+    
     paginator = Paginator(orders_query, num_items)
     page_obj = paginator.get_page(request.GET.get('page', 1))
-
-    # Iterate through orders to calculate days old for each part
-    for order in page_obj:
-        days_old = (now().date() - order.order_date).days
-        for part in order.part_set.all():
-            part.days_old = days_old  # Assigning days old to each part
 
     return render(request, 'routing/routing.html', {
         'page_obj': page_obj,
         'num_items': num_items,
+        'machined': machined,
+        'picked': picked,
+        'assembled': assembled,
     })
