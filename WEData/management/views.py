@@ -157,12 +157,12 @@ def order_list(request):
     # Existing search queries
     customer_query = request.GET.get('customer_search', '')
     order_query = request.GET.get('order_search', '')
-    product_query = request.GET.get('product_search', '')
-    job_query = request.GET.get('job_search', '')
-    status_filter = request.GET.get('status_filter', 'all')  # New status filter
+    cust_order_number_query = request.GET.get('cust_order_number_search', '')  # New variable for Customer Order Number search
     custref_query = request.GET.get('custref_search', '')
-
-    sort_order = request.GET.get('sort_order', 'newest')  # Default to 'newest'
+    status_filter = request.GET.get('status_filter', 'all')
+    sort_order = request.GET.get('sort_order', 'newest')
+    customer_address_query = request.GET.get('customer_address_search', '')  # New variable for Customer Address search
+    delivery_address_query = request.GET.get('delivery_address_search', '') 
 
     # Fetch orders based on the search criteria
     orders = Order.objects.all()
@@ -170,10 +170,16 @@ def order_list(request):
         orders = orders.filter(customer__name__icontains=customer_query)
     if order_query:
         orders = orders.filter(sage_order_number__icontains=order_query)
-    if product_query:
-        orders = orders.filter(part__product_code__icontains=product_query)
-    if job_query:
-        orders = Order.objects.filter(part__job__job_name__icontains=job_query).distinct()
+    if cust_order_number_query:  # New filter condition for Customer Order Number
+        orders = orders.filter(customer_order_number__icontains=cust_order_number_query)
+    if custref_query:
+        # Assume custref is stored directly in the order_notes or a related field
+        orders = orders.filter(order_notes__icontains='CUSTREF: ' + custref_query)
+    if customer_address_query:  # New filter condition for Customer Address
+        orders = orders.filter(customer_postcode__icontains=customer_address_query)
+    if delivery_address_query:  # New filter condition for Delivery Address
+        orders = orders.filter(delivery_postcode__icontains=delivery_address_query)
+
 
 
     # Apply status filter
@@ -209,13 +215,13 @@ def order_list(request):
         'page_obj': page_obj,
         'customer_query': customer_query,
         'order_query': order_query,
-        'product_query': product_query,
-        'job_query': job_query,
         'num_orders': num_orders,
         'num_range': num_range,
         'status_filter': status_filter,
         'sort_order': sort_order,
-        'custref_query': custref_query
+        'custref_query': custref_query,
+        'customer_address_query': customer_address_query,
+        'delivery_address_query': delivery_address_query
     })
 
 

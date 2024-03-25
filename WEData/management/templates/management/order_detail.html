@@ -13,6 +13,10 @@
                 <td>{{ order.customer.name }}</td>
             </tr>
             <tr>
+                <th>Customer Order Number</th>
+                <td>{{ order.customer_order_number }}</td>
+            </tr>
+            <tr>
                 <th>Order Date</th>
                 <td>{{ order.order_date }}</td>
             </tr>
@@ -20,6 +24,11 @@
                 <th>Delivery Postcode</th>
                 <td>{{ order.delivery_postcode }}</td>
             </tr>
+            <tr>
+                <th>Customer Postcode</th>
+                <td>{{ order.customer_postcode }}</td>
+            </tr>
+
             <tr>
                 <th>Order Value:</th>
                 <td>£{{ order.value|cut:"ï¿½"|cut:"�"|floatformat:2 }}</td>

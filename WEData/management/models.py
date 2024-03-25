@@ -21,6 +21,7 @@ class Customer(models.Model):
 class Order(models.Model):
     sage_order_number = models.IntegerField(primary_key=True, db_column='SageOrderNumber')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, db_column='CustomerID')
+    customer_order_number = models.CharField(max_length=255, unique=True, db_column='CustomerOrderNumber')
     order_date = models.DateField(db_column='OrderDate')
     delivery_postcode = models.CharField(max_length=255, db_column='DeliveryPostcode')
     customer_postcode = models.CharField(max_length=255, db_column='CustomerPostcode')

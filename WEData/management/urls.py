@@ -21,6 +21,7 @@ from .views import picking_department
 from .views import assembly_department
 from .views import minikitchen_department
 from .views import plywood_department
+from django.contrib import admin
 
 
 urlpatterns = [
@@ -75,6 +76,7 @@ urlpatterns = [
     path('update-part-sage-comment2/<int:part_id>/', views.update_part_sage_comment2, name='update_part_sage_comment2'),
     path('routing/', views.routing_view, name='routing'),
     path('add_part_to_route/', views.add_part_to_route, name='add_part_to_route'),
+
     
 
 

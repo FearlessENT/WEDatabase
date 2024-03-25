@@ -24,7 +24,7 @@ body {
     padding: 0 10px; /* Optional: Adds some padding on the left and right ends */
 }
 
-.nav-links, .profile-link {
+.nav-links, .profile-link , .admin-link{
     display: flex;
     align-items: center;
 }

@@ -10,6 +10,7 @@ CREATE TABLE Customer (
 CREATE TABLE `Order` (
     SageOrderNumber INT PRIMARY KEY,
     CustomerID INT,
+    CustomerOrderNumber VARCHAR(255) UNIQUE,
     OrderDate DATE,
     DeliveryPostcode VARCHAR(255),
     CustomerPostcode VARCHAR(255),
