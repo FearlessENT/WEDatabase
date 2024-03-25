@@ -258,18 +258,25 @@ class Route(models.Model):
 
     def __str__(self):
         return f"Route {self.name}"
+    
+    class Meta:
+        db_table = 'Route'  # Specify your database table name here
+
 
 
 
 class RoutePart(models.Model):
+    route_part_id = models.AutoField(primary_key=True)  # Dedicated primary key
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     part = models.ForeignKey(Part, on_delete=models.CASCADE)
     order = models.PositiveIntegerField()
 
     class Meta:
         ordering = ['order']
-        unique_together = ('route', 'order')  # Ensure unique order within the same route
-        db_table = 'route_part'
+        # Adjusting unique_together to include the new primary key is not necessary,
+        # but we ensure 'route' and 'order' uniqueness here
+        unique_together = (('route', 'order'), ('route', 'part'))
+        db_table = 'RoutePart'  
 
     def __str__(self):
         return f"{self.route.name} - Order {self.order}: Part {self.part.part_id}"

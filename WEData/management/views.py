@@ -2354,10 +2354,15 @@ def update_part_sage_comment2(request, part_id):
 
 from django.shortcuts import render
 from django.core.paginator import Paginator
-from .models import Order
+from .models import Order, Route, RoutePart
 
 def routing_view(request):
     num_items = int(request.GET.get('num_items', 10))
+
+    new_route = Route.objects.create(name="New Route")  # Adjust with any required fields
+    new_route.save()
+
+
     
     # Retrieve checkbox states
     machined = request.GET.get('machined', 'off')
@@ -2402,4 +2407,59 @@ def routing_view(request):
         'machined': machined,
         'picked': picked,
         'assembled': assembled,
+        'new_route_id': new_route.route_id,
     })
+
+
+
+import traceback
+
+@require_POST
+@csrf_exempt
+def add_part_to_route(request):
+    # Assuming POST requests with JSON data
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        part_id = data.get('partId')
+        route_id = data.get('routeId')  # Ensure you're receiving and handling routeId if needed
+
+        try:
+            part = Part.objects.get(part_id=part_id)
+            route = Route.objects.get(route_id=route_id)
+            order_instance = part.sage_order_number
+
+            # Check if the part is already added to the route
+            route_part, created = RoutePart.objects.get_or_create(part=part, route=route)
+            
+            if created:
+                # Assuming you want to set 'order' when a new RoutePart is created
+                # This is a simplified example; adjust the logic for determining the 'order' as needed
+                route_part.order = RoutePart.objects.filter(route=route).count()
+                route_part.save()
+
+                partInfo = {
+                    'partId': part.part_id,
+                    # Add other part details as needed
+                    'address': order_instance.delivery_postcode,
+                    'order': route_part.order  # Include the order in partInfo
+                }
+
+                return JsonResponse({
+                    'success': True, 
+                    'message': 'Part added to route successfully.',
+                    'partInfo': partInfo
+                })
+
+                return JsonResponse({'success': False, 'message': 'Part is already added to the route.'})
+
+        except Part.DoesNotExist:
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': 'Part not found'}, status=400)
+        except Route.DoesNotExist:
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': 'Route not found'}, status=400)
+        except Exception as e:
+            print(traceback.format_exc())
+            return JsonResponse({'success': False, 'message': 'Error adding part to route: {}'.format(str(e))}, status=500)
+
+    return JsonResponse({'success': False, 'message': 'Invalid request'}, status=400)

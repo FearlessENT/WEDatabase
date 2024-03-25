@@ -42,7 +42,7 @@
 </div>
 
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUBx-qunXzCEwXf2CoQfCRWoE3dU1q6Wg&callback=initMap" type="text/javascript"></script>
+
 
 
 
@@ -68,34 +68,14 @@
     </label>
 </div>
 
-<div class="map-container" id="map" style="width: 100%; height: 25vh;"></div>
+<div class="map-container" id="map" style="width: 100%; height: 45vh;"></div>
 
 
- <script>
-    function initMap() {
-        var map = new google.maps.Map(document.getElementById("map"), {
-            zoom: 15, // Adjust zoom level as needed
-        });
-    
-        var geocoder = new google.maps.Geocoder();
-        geocodeAddress(geocoder, map);
-    }
-    
-    function geocodeAddress(geocoder, map) {
-        var address = "PE9 3UT"; // Your target address
-        geocoder.geocode({'address': address}, function(results, status) {
-            if (status === 'OK') {
-                map.setCenter(results[0].geometry.location);
-                new google.maps.Marker({
-                    map: map,
-                    position: results[0].geometry.location
-                });
-            } else {
-                alert('Geocode was not successful for the following reason: ' + status);
-            }
-        });
-    }
-</script>
+<button onclick="calculateAndDisplayBestRoute()">Calculate Best Route</button>
+
+
+<div>Total Distance: <span id="totalDistance">0</span> miles</div>
+<div>Total Time: <span id="totalTime">0</span> hours</div>
 
 
 <script>
@@ -104,6 +84,28 @@
         mapContainer.style.display = this.checked ? 'block' : 'none';
     });
 </script>
+
+
+<div id="routeInfo" data-route-id="{{ new_route_id }}" hidden></div>
+
+<div class="selected-parts-container">
+    <table id="selectedPartsTable" class="table">
+        <thead>
+            <tr>
+                <th>Part ID</th>
+                <th>Address</th>
+                <!-- Add other columns as necessary -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be added dynamically -->
+        </tbody>
+    </table>
+</div>
+
+
+
+
 
 
 
@@ -181,10 +183,11 @@
                                     <button type="submit">Save</button>
                                 </div>
                             </td>
-                            <td>
-                  
-                                
-                                <input class = "custom-checkbox" type="checkbox" name="select_part_{{ part.id }}" value="{{ part.id }}">
+                            <!-- Select a part to be added to the route -->
+                            <td> 
+                                <input class="custom-checkbox select-part-checkbox" type="checkbox" 
+                                    name="select_part_{{ part.part_id }}" value="{{ part.part_id }}" 
+                                    data-part-id="{{ part.part_id }}">
                             </td>
 
 
@@ -304,6 +307,293 @@
         </form>
     {% endif %}
 </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUBx-qunXzCEwXf2CoQfCRWoE3dU1q6Wg&callback=initMap" type="text/javascript"></script>
+<script>
+
+
+    let map;
+    let bounds
+    let markersArray = [];
+
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 15, // Initial zoom level
+        });
+        bounds = new google.maps.LatLngBounds();
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer();
+        directionsRenderer.setMap(map);
+
+        var geocoder = new google.maps.Geocoder();
+        geocodeBaseAndSetMap(geocoder, map);
+    }
+
+    function geocodeBaseAndSetMap(geocoder, map) {
+        var baseAddress = "PE9 3UT"; // Your base address
+        geocoder.geocode({'address': baseAddress}, function(results, status) {
+            if (status === 'OK') {
+                var baseLocation = results[0].geometry.location;
+
+                // Set the map center and add the base location marker
+                map.setCenter(baseLocation);
+                new google.maps.Marker({
+                    map: map,
+                    position: baseLocation
+                });
+                bounds.extend(baseLocation);
+
+                // Add base location as the first point
+                markersArray[0] = baseLocation; // Ensures the base is always at index 0
+            } else {
+                alert('Geocode was not successful for the following reason: ' + status);
+            }
+        });
+    }
+
+
+    function calculateAndDisplayBestRoute() {
+        if (markersArray.length < 3) {
+            alert("Please add at least two destinations to calculate the best route.");
+            return;
+        }
+
+        const startEnd = markersArray[0]; // Assuming the base location is always the first element
+        const waypoints = markersArray.slice(1).map(location => ({
+            location: location,
+            stopover: true
+        }));
+
+        const request = {
+            origin: startEnd,
+            destination: startEnd,
+            waypoints: waypoints,
+            optimizeWaypoints: true,
+            travelMode: 'DRIVING',
+        };
+
+        directionsService.route(request, function(result, status) {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+                // Your existing logic for handling the optimized route...
+
+                // Calculate total distance and duration
+                let totalDistance = 0;
+                let totalTime = 0;
+                const myroute = result.routes[0];
+                for (let i = 0; i < myroute.legs.length; i++) {
+                    totalDistance += myroute.legs[i].distance.value; // Distance in meters
+                    totalTime += myroute.legs[i].duration.value; // Time in seconds
+                }
+
+                // Convert total distance to miles (from meters) and total time to hours (from seconds)
+                totalDistance = (totalDistance / 1609.344).toFixed(2); // 1 mile = 1609.344 meters
+                totalTime = (totalTime / 3600).toFixed(2); // 1 hour = 3600 seconds
+
+                // Update the HTML elements
+                document.getElementById('totalDistance').innerText = `${totalDistance}`;
+                document.getElementById('totalTime').innerText = `${totalTime}`;
+
+            } else {
+                console.error('Directions request failed due to ' + status);
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // Attach an event listener to all checkboxes with the 'select-part-checkbox' class
+        const checkboxes = document.querySelectorAll('.select-part-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if(this.checked) {
+                    // Assuming each checkbox's value attribute holds the partId and data attribute for the address
+                    const partId = this.value;
+                    const address = this.dataset.address; // Ensure you have data-address attribute in your checkbox
+                    selectPart(partId, address);
+                }
+            });
+        });
+    });
+
+
+
+    function selectPart(partId, address) {
+
+        const routeId = document.getElementById('routeInfo').getAttribute('data-route-id');
+        // Example AJAX request to send selected part ID to the backend
+        fetch("{% url 'add_part_to_route' %}", {
+            method: 'POST',
+            body: JSON.stringify({partId: partId, routeId: routeId}),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken  // Ensure you have CSRF token handled correctly
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                // If the part was successfully added, update the map and table
+                addPartToTable(partId, data.partInfo);
+                addLocationToMap(data.partInfo.address);
+            } else {
+                // Handle error
+                console.error('Part could not be added to the route');
+                alert(data.message);
+                
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+
+
+
+
+
+    // Function to handle CSRF token in Django with AJAX
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+
+
+
+
+
+
+    function addPartToTable(partId, partInfo) {
+        const table = document.getElementById('selectedPartsTable'); // Ensure you have this table in your HTML
+        const row = table.insertRow();
+        // Assuming partInfo contains data like { partId: ..., address: ..., otherInfo: ...}
+        row.innerHTML = `<td>${partInfo.partId}</td><td>${partInfo.address}</td>`; // Add more cells as needed
+    }
+
+
+
+    function addLocationToMap(address) {
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ 'address': address }, function (results, status) {
+            if (status === 'OK') {
+                var location = results[0].geometry.location;
+                var marker = new google.maps.Marker({
+                    map: map,
+                    position: location
+                });
+                bounds.extend(marker.getPosition());
+                map.fitBounds(bounds);
+
+                markersArray.push(location); // Add the new location
+
+                // If there are at least two points (base + at least one destination), calculate route
+                if (markersArray.length >= 2) {
+                    calculateRouteAndUpdateLabels();
+                }
+            } else {
+                console.error('Geocode was not successful for the following reason: ' + status);
+            }
+        });
+    }
+
+    function calculateRouteAndUpdateLabels() {
+        if (markersArray.length < 2) {
+            return; // Need at least two points to calculate a route
+        }
+
+        const waypoints = markersArray.slice(1, -1).map(location => ({
+            location: location,
+            stopover: true
+        }));
+
+        const request = {
+            origin: markersArray[0],
+            destination: markersArray[markersArray.length - 1],
+            waypoints: waypoints,
+            travelMode: 'DRIVING',
+            optimizeWaypoints: false // Set to false to maintain the order of points as added
+        };
+
+        directionsService.route(request, function(result, status) {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+                let totalDistance = 0;
+                let totalTime = 0;
+
+                const myroute = result.routes[0];
+                for (let i = 0; i < myroute.legs.length; i++) {
+                    totalDistance += myroute.legs[i].distance.value; // Distance in meters
+                    totalTime += myroute.legs[i].duration.value; // Time in seconds
+                }
+
+                // Convert total distance to miles (from meters) and total time to hours (from seconds)
+                totalDistance = (totalDistance / 1609.34).toFixed(2);
+                totalTime = (totalTime / 3600).toFixed(2);
+
+                // Update the HTML elements
+                document.getElementById('totalDistance').innerText = `${totalDistance} miles`;
+                document.getElementById('totalTime').innerText = `${totalTime} hours`;
+            } else {
+                console.error('Directions request failed due to ' + status);
+            }
+        });
+    }
+</script>
+
+
+
+
+
 
 
 

@@ -766,6 +766,8 @@ body {
 
 .map-container {
     display: block; /* Ensures the map is shown initially if checkbox is checked */
+
+    position: fixed;
 }
 
 

@@ -74,6 +74,7 @@ urlpatterns = [
     path('update-part-sage-comment1/<int:part_id>/', views.update_part_sage_comment1, name='update_part_sage_comment1'),
     path('update-part-sage-comment2/<int:part_id>/', views.update_part_sage_comment2, name='update_part_sage_comment2'),
     path('routing/', views.routing_view, name='routing'),
+    path('add_part_to_route/', views.add_part_to_route, name='add_part_to_route'),
     
 
 
